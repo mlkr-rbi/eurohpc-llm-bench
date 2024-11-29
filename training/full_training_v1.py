@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from data_tools.dataset_factory import get_bertic_dataset
+from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1
 from settings import MODEL_TRAINING_OUTPUT
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
@@ -105,15 +105,15 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
 
 def setup_and_run_training(model_id, model_label, dataset: Dataset = None, production=False):
     tokenizer_wrapper = TokenizerWrapper(model_id)
-    tokenized_dataset = tokenizer_wrapper.tokenize_dataset(dataset)
-    split_dataset = tokenized_dataset.train_test_split(test_size=0.1)
-    train_dataset = split_dataset['train']
-    val_dataset = split_dataset['test']
+    train_dataset = dataset['train']
+    val_dataset = dataset['validation']
     print(f"Training dataset size: {len(train_dataset)}")
     print(f"Validation dataset size: {len(val_dataset)}")
+    tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
+    tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset)
     # model
     model = create_model(model_id)
-    do_training(model, tokenizer_wrapper.tokenizer, train_dataset, val_dataset,
+    do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val,
                 model_label=model_label, production=production)
 
 def compute_perplexity_metric(eval_pred):
@@ -211,6 +211,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
 
 if __name__ == "__main__":
-    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_test_cro_dataset())
+    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_macocu_v1())
     #print(get_test_cro_dataset())
     #get_bertic_dataset()
