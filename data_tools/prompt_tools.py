@@ -37,7 +37,7 @@ class TranslationPromptComposer:
         instr = self._instruction + " " if self._instruction else ""
         return f"{instr}{label1}: {text1} {label2}: {text2}"
 
-    def test_prompt(self, text: str, start_lang: str = None) -> str:
+    def query_prompt(self, text: str, start_lang: str = None) -> str:
         label1, label2 = self._assign_lang_labels(start_lang)
         instr = self._instruction + " " if self._instruction else ""
         return f"{instr}{label1}: {text} {label2}: "
@@ -57,9 +57,9 @@ def hr_en_translate_prompt():
 def prompt_tst():
     p = hr_en_translate_prompt()
     print(p.train_prompt('Dobar dan', 'Good day', 'hr'))
-    print(p.test_prompt('Dobar dan', 'hr'))
+    print(p.query_prompt('Dobar dan', 'hr'))
     print(p.train_prompt('Good day', 'Dobar dan', 'en'))
-    print(p.test_prompt('Good day', 'en'))
+    print(p.query_prompt('Good day', 'en'))
 
 if __name__ == '__main__':
     prompt_tst()
