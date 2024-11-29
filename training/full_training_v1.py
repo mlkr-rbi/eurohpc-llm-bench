@@ -6,12 +6,12 @@ from pathlib import Path
 
 import numpy as np
 
+from data_tools.dataset_factory import get_bertic_dataset
 from settings import MODEL_TRAINING_OUTPUT
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import torch
-import torch.nn as nn
 from huggingface_hub import login
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
@@ -23,7 +23,7 @@ from transformers import (
     DataCollatorForLanguageModeling
 )
 from datasets import load_dataset, Dataset
-from accelerate import Accelerator
+
 
 # Load Hugging Face token and login
 def huggingface_login():
@@ -102,28 +102,6 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
     return model
-
-def get_bertic_dataset(subsample=5000, rseed=5439):
-    dset = load_dataset('classla/xlm-r-bertic-data', trust_remote_code=True)
-    dset = dset['train'] # sample efficiently!
-    if subsample and subsample < len(dset):
-        dset = dset.shuffle(seed=rseed)
-        dset = dset.select(range(subsample))
-    dset = dset['output']
-    # clean whitespaces, make new hf dataset
-    dset = Dataset.from_list([{ 'text': txt.strip() } for txt in dset])
-    return dset
-
-def get_test_cro_dataset(subsample=5000, rseed=5439):
-    dset = load_dataset('saillab/alpaca-croatian-cleaned')
-    dset = dset['train']
-    if subsample and subsample < len(dset):
-        dset = dset.shuffle(seed=rseed)
-        dset = dset.select(range(subsample))
-    dset = dset['output']
-    # clean whitespaces, make new hf dataset
-    dset = Dataset.from_list([{ 'text': txt.strip() } for txt in dset])
-    return dset
 
 def setup_and_run_training(model_id, model_label, dataset: Dataset = None, production=False):
     tokenizer_wrapper = TokenizerWrapper(model_id)
@@ -233,6 +211,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
 
 if __name__ == "__main__":
-    #setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_test_cro_dataset())
+    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_test_cro_dataset())
     #print(get_test_cro_dataset())
-    get_bertic_dataset()
+    #get_bertic_dataset()
