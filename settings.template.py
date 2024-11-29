@@ -9,3 +9,5 @@ HUGGINGFACE_TOKEN = ''
 
 # tab-separated .txt file with parallel en-hr sentences
 MACOCU_SENTENCES_FILE = ''
+
+MACOCU_DATASET_V1 = '' # pre-processed dataset, in huggingface dataset format, ready to use
