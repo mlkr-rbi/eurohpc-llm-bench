@@ -12,3 +12,8 @@ copy settings.template.py to settings.py and enter the values of the variables t
 # code overview
 src/ contains the original training code by Filip and Miha
 data_tools contains tools and utils for creating and manipulating the datasets
+utils package is for various utility modules not located in more specific packages 
+
+## training
+training package contains the training code
+full_training_v1.py is a refactored and slightly updated version of DPmultiGPU.py
