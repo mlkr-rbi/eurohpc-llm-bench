@@ -1,0 +1,20 @@
+# copy to .gitignore and adapt it to your local environment
+# keep the '.gitignore' line! to avoid tracking of and conflict with local ignore setups
+
+.gitignore
+
+.vscode
+.idea
+
+
+# python
+
+*.pyc
+__pycache__/
+.ipynb_checkpoints
+requirements.txt
+
+# local project settings
+settings.py
+
+# local files, temp files etc.
