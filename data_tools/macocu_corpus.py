@@ -1,3 +1,8 @@
+'''
+Utils for loading, manipulating and analyzing MaCoCu parallel sentences corpus:
+https://www.clarin.si/repository/xmlui/handle/11356/1814
+'''
+
 import csv
 import random
 from typing import Callable

@@ -1,3 +1,7 @@
+'''
+Utility classes for creating translation prompts for LLM training and querying.
+'''
+
 class TranslationPromptComposer:
     '''
     Utility class that transforms parallel texts to and from a string prompt for LLM training and querying.
@@ -39,6 +43,9 @@ class TranslationPromptComposer:
         return f"{instr}{label1}: {text} {label2}: "
 
 def hr_en_translate_prompt():
+    '''
+    Factory method for the default Croatian-English translation prompt composer.
+    '''
     return TranslationPromptComposer(
          lang1="hr",
          lang2="en",

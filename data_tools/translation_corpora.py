@@ -1,3 +1,7 @@
+'''
+Tools for loading and manipulating various translation corpora.
+'''
+
 from datasets import load_dataset
 
 def biblenelp_corpus():
