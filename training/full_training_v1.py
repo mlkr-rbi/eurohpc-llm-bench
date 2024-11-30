@@ -129,7 +129,7 @@ def compute_perplexity_metric(eval_pred):
     print(f"Perplexity: {perplexity}")
     return {"perplexity": perplexity}
 
-def do_training(model, tokenizer, train_dataset, val_dataset, model_label, production=False):
+def do_training(model, tokenizer, train_dataset, val_dataset, model_label, production=True):
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False
@@ -141,7 +141,8 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     logging_dir = Path(MODEL_TRAINING_OUTPUT)/logging_dir_tag
     if production: # set params for production-level long runs
         prediction_loss_only = False
-        compute_metrics = compute_perplexity_metric
+        #compute_metrics = compute_perplexity_metric
+        compute_metrics = None
         resume_from_checkpoint = True
         num_train_epochs = 3
         gradient_accumulation_steps = 8
