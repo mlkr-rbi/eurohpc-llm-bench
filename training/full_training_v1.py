@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1
-from settings import MODEL_TRAINING_OUTPUT
+from settings import MODEL_TRAINING_OUTPUT, HUGGINGFACE_TOKEN
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
@@ -27,9 +27,7 @@ from datasets import load_dataset, Dataset
 
 # Load Hugging Face token and login
 def huggingface_login():
-    with open("/workspace/gemma2/tok_gemma2.txt", "r") as f:
-        huggingface = f.read().strip()
-    login(token=huggingface)
+    login(token=HUGGINGFACE_TOKEN)
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -104,6 +102,7 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
     return model
 
 def setup_and_run_training(model_id, model_label, dataset: Dataset = None, production=False):
+    if 'gemma' in model_id.lower(): huggingface_login()
     tokenizer_wrapper = TokenizerWrapper(model_id)
     train_dataset = dataset['train']
     val_dataset = dataset['validation']
