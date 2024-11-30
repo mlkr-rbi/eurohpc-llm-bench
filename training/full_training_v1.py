@@ -211,6 +211,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
 
 if __name__ == "__main__":
-    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_macocu_v1())
+    setup_and_run_training(model_id="google/gemma-2-2b", model_label="gemma-2-2b", dataset=get_macocu_v1())
     #print(get_test_cro_dataset())
     #get_bertic_dataset()
