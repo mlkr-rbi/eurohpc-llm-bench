@@ -18,3 +18,5 @@ requirements.txt
 settings.py
 
 # local files, temp files etc.
+
+*.out.txt # files with script outputs
