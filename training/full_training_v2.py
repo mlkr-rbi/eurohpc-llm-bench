@@ -10,7 +10,7 @@ from pyarrow import set_timezone_db_path
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1, get_test_cro_dataset
 import settings
-from settings import MODEL_TRAINING_OUTPUT
+from settings import MODEL_TRAINING_OUTPUT, HUGGINGFACE_TOKEN
 
 import yaml
 
@@ -32,9 +32,7 @@ from datasets import load_dataset, Dataset, DatasetDict
 
 # Load Hugging Face token and login
 def huggingface_login():
-    with open("/workspace/gemma2/tok_gemma2.txt", "r") as f:
-        huggingface = f.read().strip()
-    login(token=huggingface)
+    login(token=HUGGINGFACE_TOKEN)
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
