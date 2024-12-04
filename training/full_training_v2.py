@@ -74,33 +74,37 @@ class TokenizerWrapper():
             remove_columns=["text"]
         )
 
-def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
-    if quantize:
+def create_model(model_id: str, quantize_params: dict, peft_params: dict):
+    if quantize_params['enabled']:
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
+            load_in_4bit=quantize_params['load_in_4bit'],
+            bnb_4bit_quant_type=quantize_params['bnb_4bit_quant_type'],
             bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=False,
+            bnb_4bit_use_double_quant=quantize_params['bnb_4bit_use_double_quant'],
         )
-    else:
-        bnb_config = None
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        quantization_config=bnb_config,
-        device_map="auto",
-        trust_remote_code=True
-    )
-    if quantize:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            quantization_config=bnb_config,
+            device_map="auto",
+            trust_remote_code=True
+        )
         model.gradient_checkpointing_enable()
         model = prepare_model_for_kbit_training(model)
-    if peft:
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        model.gradient_checkpointing_enable()
+    if peft_params['enabled']:
         lora_config = LoraConfig(
-            r=8,
-            lora_alpha=32,
-            target_modules=["q_proj", "k_proj"],
-            lora_dropout=0.05,
-            bias="none",
-            task_type="CAUSAL_LM"
+            r=peft_params['r'],
+            lora_alpha=peft_params['lora_alpha'],
+            target_modules=peft_params['target_modules'],
+            lora_dropout=peft_params['lora_dropout'],
+            bias=peft_params['bias'],
+            task_type=peft_params['task_type']
         )
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
@@ -130,7 +134,6 @@ def compute_perplexity_metric(eval_pred):
     return {"perplexity": perplexity}
 
 def setup_and_run_training(params):
-    # dataset and tokenizer
     tokenizer_wrapper = TokenizerWrapper(params['model_id'])
     dataset = dataset_loader(params['dataset_label'])
     if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
@@ -144,14 +147,11 @@ def setup_and_run_training(params):
         print(f"Training dataset size: {len(train_dataset)}")
     tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
     tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
-    # model
     model_id = params['model_id']
     if 'gemma' in model_id.lower(): huggingface_login()
     model = create_model(model_id, params['quantize'], params['peft'])
-    # misc
     if 'MODEL_TRAINING_OUTPUT' in params:
         settings.MODEL_TRAINING_OUTPUT = params['MODEL_TRAINING_OUTPUT']
-    #
     do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val, params)
 
 def do_training(model, tokenizer, train_dataset, val_dataset, params):
