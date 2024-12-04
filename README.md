@@ -16,4 +16,10 @@ utils package is for various utility modules not located in more specific packag
 
 ## training
 training package contains the training code
+settings.MODEL_TRAINING_OUTPUT is the directory where the training output will be saved
 full_training_v1.py is a refactored and slightly updated version of DPmultiGPU.py
+full_training_v2.py is a version of full_training_v1.py that loads params from a .yaml file
+run_module.sh is a util script for server run that runs a module in the background and redirects the output
+
+## running full_training_v2.py with run_module.sh and using a .yaml file (from the root directory)
+./run_module.sh training/full_training_v2.py training/setup/train_setup_v1.yaml
