@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1
-from settings import MODEL_TRAINING_OUTPUT
+from settings import MODEL_TRAINING_OUTPUT, HUGGINGFACE_TOKEN
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
@@ -27,9 +27,7 @@ from datasets import load_dataset, Dataset
 
 # Load Hugging Face token and login
 def huggingface_login():
-    with open("/workspace/gemma2/tok_gemma2.txt", "r") as f:
-        huggingface = f.read().strip()
-    login(token=huggingface)
+    login(token=HUGGINGFACE_TOKEN)
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -104,6 +102,7 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
     return model
 
 def setup_and_run_training(model_id, model_label, dataset: Dataset = None, production=False):
+    if 'gemma' in model_id.lower(): huggingface_login()
     tokenizer_wrapper = TokenizerWrapper(model_id)
     train_dataset = dataset['train']
     val_dataset = dataset['validation']
@@ -140,9 +139,12 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     output_dir = Path(MODEL_TRAINING_OUTPUT)/output_dir_tag
     logging_dir_tag = f"logs_{model_label}"
     logging_dir = Path(MODEL_TRAINING_OUTPUT)/logging_dir_tag
+    train_dataset.set_format(type='torch', device='cuda')
+    val_dataset.set_format(type='torch', device='cuda')
     if production: # set params for production-level long runs
-        prediction_loss_only = False
-        compute_metrics = compute_perplexity_metric
+        prediction_loss_only = True
+        #compute_metrics = compute_perplexity_metric
+        compute_metrics = None
         resume_from_checkpoint = True
         num_train_epochs = 3
         gradient_accumulation_steps = 8
@@ -211,6 +213,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
 
 if __name__ == "__main__":
-    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_macocu_v1())
+    setup_and_run_training(model_id="google/gemma-2-2b", model_label="gemma-2-2b", dataset=get_macocu_v1())
     #print(get_test_cro_dataset())
     #get_bertic_dataset()
