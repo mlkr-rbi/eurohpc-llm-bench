@@ -1,13 +1,18 @@
 ''' training in torch, basically a more structured version of DPmultiGPU.py code '''
 
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+from pyarrow import set_timezone_db_path
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1, get_test_cro_dataset
+import settings
 from settings import MODEL_TRAINING_OUTPUT
+
+import yaml
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
@@ -112,20 +117,6 @@ def dataset_loader(label:str) -> DatasetDict:
     elif label == 'test_cro': return get_test_cro_dataset()
     else: raise ValueError(f"Unknown dataset label: {label}")
 
-def setup_and_run_training(model_id, model_label, dataset_label: str, production=False):
-    tokenizer_wrapper = TokenizerWrapper(model_id)
-    dataset = dataset_loader(dataset_label)
-    train_dataset = dataset['train']
-    val_dataset = dataset['validation']
-    print(f"Training dataset size: {len(train_dataset)}")
-    print(f"Validation dataset size: {len(val_dataset)}")
-    tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
-    tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset)
-    # model
-    model = create_model(model_id)
-    do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val,
-                model_label=model_label, production=production)
-
 def compute_perplexity_metric(eval_pred):
     print("Computing perplexity...")
     logits, labels = eval_pred
@@ -140,58 +131,63 @@ def compute_perplexity_metric(eval_pred):
     print(f"Perplexity: {perplexity}")
     return {"perplexity": perplexity}
 
-def do_training(model, tokenizer, train_dataset, val_dataset, model_label, production=False):
+def setup_and_run_training(params):
+    # dataset and tokenizer
+    tokenizer_wrapper = TokenizerWrapper(params['model_id'])
+    dataset = dataset_loader(params['dataset_label'])
+    if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
+        train_dataset = dataset['train']
+        val_dataset = dataset['validation']
+        print(f"Training dataset size: {len(train_dataset)}")
+        print(f"Validation dataset size: {len(val_dataset)}")
+    else: # single dataset
+        train_dataset = dataset
+        val_dataset = None
+        print(f"Training dataset size: {len(train_dataset)}")
+    tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
+    tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
+    # model
+    model_id = params['model_id']
+    if 'gemma' in model_id.lower(): huggingface_login()
+    model = create_model(model_id, params['quantize'], params['peft'])
+    # misc
+    if 'MODEL_TRAINING_OUTPUT' in params:
+        settings.MODEL_TRAINING_OUTPUT = params['MODEL_TRAINING_OUTPUT']
+    #
+    do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val, params)
+
+def do_training(model, tokenizer, train_dataset, val_dataset, params):
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False
     )
-    # if the folders are present, the training will be restarted
-    output_dir_tag = f"model_{model_label}"
-    output_dir = Path(MODEL_TRAINING_OUTPUT)/output_dir_tag
-    logging_dir_tag = f"logs_{model_label}"
-    logging_dir = Path(MODEL_TRAINING_OUTPUT)/logging_dir_tag
-    if production: # set params for production-level long runs
-        prediction_loss_only = False
-        compute_metrics = compute_perplexity_metric
-        resume_from_checkpoint = True
-        num_train_epochs = 3
-        gradient_accumulation_steps = 8
-    else: # set params for short test runs
-        prediction_loss_only = True
-        compute_metrics = None
-        resume_from_checkpoint = False
-        num_train_epochs = 0.05
-        gradient_accumulation_steps = 1
+    output_dir = Path(MODEL_TRAINING_OUTPUT) / params['output_dir_tag']
+    logging_dir = Path(MODEL_TRAINING_OUTPUT) / params['logging_dir_tag']
     training_args = TrainingArguments(
         output_dir=output_dir,
         logging_dir=logging_dir,
         report_to='tensorboard',
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=gradient_accumulation_steps,
-        per_device_eval_batch_size=4,
-        num_train_epochs=num_train_epochs,
-        logging_strategy="steps", logging_steps=10,
-        # evaluation on eval dataset
-        eval_strategy="steps", eval_steps=100,
+        per_device_train_batch_size=params['per_device_train_batch_size'],
+        gradient_accumulation_steps=params['gradient_accumulation_steps'],
+        per_device_eval_batch_size=params['per_device_eval_batch_size'],
+        num_train_epochs=params['num_train_epochs'],
+        logging_strategy="steps", logging_steps=params['logging_steps'],
+        eval_strategy=params['eval_strategy'], eval_steps=params['eval_steps'],
         eval_accumulation_steps=4,
-        prediction_loss_only=prediction_loss_only,
-        # checkpointing
-        save_strategy="steps", save_steps=500,
-        save_total_limit=2,
-        # optimizer
-        learning_rate=2e-4,
-        weight_decay=0.001,
-        max_grad_norm=0.3,
-        max_steps=-1,
-        warmup_ratio=0.03,
+        prediction_loss_only=False,
+        save_strategy="steps", save_steps=params['save_steps'],
+        save_total_limit=params['save_total_limit'],
+        learning_rate=params['learning_rate'],
+        weight_decay=params['weight_decay'],
+        max_grad_norm=params['max_grad_norm'],
+        warmup_ratio=params['warmup_ratio'],
         group_by_length=True,
         lr_scheduler_type="cosine",
-        # misc
-        fp16=False,
-        bf16=True,
-        remove_unused_columns=False,
-        ddp_find_unused_parameters=False,
-        gradient_checkpointing=True,
+        fp16=params['fp16'],
+        bf16=params['bf16'],
+        remove_unused_columns=params['remove_unused_columns'],
+        ddp_find_unused_parameters=params['ddp_find_unused_parameters'],
+        gradient_checkpointing=params['gradient_checkpointing'],
         local_rank=-1
     )
     trainer = Trainer(
@@ -200,27 +196,36 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_perplexity_metric,
     )
+    resume = True
     while True:
         try:
-            trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+            trainer.train(resume_from_checkpoint=resume)
             print("Training finished.")
             break
         except ValueError as e:
             msg = str(e)
             if "no valid checkpoint found" in msg.lower():
                 print("No valid checkpoint found, training from scratch.")
-                resume_from_checkpoint = False
+                resume = False
                 continue
             else:
                 raise e
-    # save the model and the log to timestamped folders (rename the folders)
     timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"model_{model_label}_{timetag}")
-    logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
+    output_dir.rename(Path(MODEL_TRAINING_OUTPUT) / f"model_{params['model_label']}_{timetag}")
+    logging_dir.rename(Path(MODEL_TRAINING_OUTPUT) / f"logs_{params['model_label']}_{timetag}")
+
+def run_training_yaml(yaml_file):
+    with open(yaml_file, 'r') as file:
+        params = yaml.safe_load(file)
+    setup_and_run_training(params)
 
 if __name__ == "__main__":
-    setup_and_run_training(model_id='HuggingFaceTB/SmolLM-135M', model_label='SmolLM-135M', dataset=get_macocu_v1())
-    #print(get_test_cro_dataset())
-    #get_bertic_dataset()
+    if len(sys.argv) < 2: # experimental code
+        # print(get_test_cro_dataset())
+        # get_bertic_dataset()
+        pass
+    else:
+        yaml_file = sys.argv[1]
+        run_training_yaml(yaml_file)

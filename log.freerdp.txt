@@ -1,0 +1,12 @@
+[12:40:15:880] [75688:75691] [WARN][com.freerdp.crypto] - Certificate verification failure 'self-signed certificate (18)' at stack position 0
+[12:40:15:880] [75688:75691] [WARN][com.freerdp.crypto] - CN = nessie.irb.hr
+[12:41:16:763] [75688:75748] [WARN][com.freerdp.client.x11] - failed to get clipboard data in format text/uri-list [source format FileGroupDescriptorW]
+[12:41:29:515] [75688:75748] [WARN][com.freerdp.client.x11] - failed to get clipboard data in format text/uri-list [source format FileGroupDescriptorW]
+[12:41:30:558] [75688:75748] [WARN][com.freerdp.client.x11] - failed to get clipboard data in format text/uri-list [source format FileGroupDescriptorW]
+[12:41:33:566] [75688:75688] [ERROR][com.freerdp.core] - freerdp_abort_connect:freerdp_set_last_error_ex ERRCONNECT_CONNECT_CANCELLED [0x0002000B]
+[12:40:16:189] [75688:75691] [INFO][com.freerdp.gdi] - Local framebuffer format  PIXEL_FORMAT_BGRX32
+[12:40:16:189] [75688:75691] [INFO][com.freerdp.gdi] - Remote framebuffer format PIXEL_FORMAT_RGB16
+[12:40:16:224] [75688:75747] [INFO][com.freerdp.channels.rdpdr.client] - Loading device service drive [share] (static)
+[12:40:16:226] [75688:75691] [INFO][com.freerdp.channels.rdpsnd.client] - [static] Loaded fake backend for rdpsnd
+[12:40:17:725] [75688:75691] [INFO][com.freerdp.client.x11] - Logon Error Info SESSION_ID [LOGON_MSG_SESSION_CONTINUE]
+[12:40:17:973] [75688:75747] [INFO][com.freerdp.channels.rdpdr.client] - registered device #1: share (type=8 id=1)
