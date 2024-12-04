@@ -3,7 +3,7 @@ model_label: "gemma-2-2b"
 dataset_label: "macocu_v1"
 output_dir_tag: "model_gemma-2-2b"
 logging_dir_tag: "logs_gemma-2-2b"
-num_train_epochs: 0.05
+num_train_epochs: 3
 gradient_accumulation_steps: 8
 per_device_train_batch_size: 4
 per_device_eval_batch_size: 4
@@ -23,14 +23,14 @@ ddp_find_unused_parameters: False
 gradient_checkpointing: True
 # QUANTIZATION AND PEFT
 quantize:
-  enabled: True
+  enabled: False
   load_in_4bit: True
   bnb_4bit_quant_type: "nf4"
   bnb_4bit_compute_dtype: "torch.bfloat16"
   bnb_4bit_use_double_quant: False
 peft:
   enabled: True
-  r: 8
+  r: 32
   lora_alpha: 32
   target_modules: ["q_proj", "k_proj"]
   lora_dropout: 0.05
