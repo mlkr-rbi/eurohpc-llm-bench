@@ -4,7 +4,8 @@ Metods for creating production (training and/or testing ready) datasets.
 from datasets import load_dataset, Dataset, DatasetDict
 
 from settings import MACOCU_DATASET_V1
-
+from utils.config_utils import get_macocu_pairs_dataset_dir
+from utils.config_utils import get_macocu_text_dataset_dir
 
 def get_bertic_dataset(subsample=5000, rseed=5439):
     '''
@@ -45,6 +46,39 @@ def get_macocu_v1():
     print(dset)
     print()
     return dset
+
+def get_macocu_pairs_v1():
+    '''Load MaCoCu pairs v1 dataset from disk.'''
+    dset = DatasetDict.load_from_disk(get_macocu_pairs_dataset_dir())
+    print('MaCoCu v1 dataset loaded:')
+    print(dset)
+    print()
+    return dset
+
+def get_macocu_text_v1():
+    '''Load MaCoCu text v1 dataset from disk.'''
+    dset = DatasetDict.load_from_disk(get_macocu_text_dataset_dir())
+    print('MaCoCu v1 dataset loaded:')
+    print(dset)
+    print()
+    return dset
+
+DATASETS = {
+    'macocu': get_macocu_v1,
+    'macocu-pairs': get_macocu_pairs_v1,
+    'macocu-texts': get_macocu_text_v1,
+    'bertic': get_bertic_dataset,
+    # 'alpaca': get_test_cro_dataset,
+}
+
+def get_original_dataset(dataset_name: str="macocu") -> DatasetDict:
+    '''Load dataset by dataset name.'''
+    if dataset_name.lower() in DATASETS:
+        return DATASETS[dataset_name.lower()]()
+    else:
+        raise NotImplementedError(f"The given dataset ({dataset_name}) is not implemented jet. " +
+                                  f"The only implemented datasets are: ({list(DATASETS.keys())})")
+
 
 if __name__ == '__main__':
     get_macocu_v1()

@@ -18,5 +18,24 @@ requirements.txt
 settings.py
 
 # local files, temp files etc.
+datasets
+models
+outputs
+prompts/*
+experiments/*
 
 *.out.txt # files with script outputs
+
+# retain the base prompts and experiments YAML files
+!prompts/mt-en-hr-000.yml
+!prompts/mt-en-hr-001.yml
+!prompts/mt-en-hr-002.yml
+!experiments/mt-eval-2b-it-v000.yml
+!experiments/mt-eval-2b-peft-3epochs_lr2e-4-2024-12-01-v000.yml
+!experiments/mt-eval-2b-peft-5epochs_lr2e-5-2024-12-01-v000.yml
+!experiments/mt-eval-2b-v000.yml
+!experiments/mt-eval-9b-it-eval-v000.yml
+!experiments/mt-eval-9b-v000.yml
+!experiments/mt-eval-default.yml
+!experiments/mt-train-2b-peft-3epochs_lr2e-4.yml
+!experiments/mt-train-default.yml

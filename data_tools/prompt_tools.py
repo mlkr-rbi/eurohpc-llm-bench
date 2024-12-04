@@ -1,8 +1,27 @@
 '''
 Utility classes for creating translation prompts for LLM training and querying.
 '''
+from abc import ABC, abstractmethod
+import numpy as np
+from utils import config_utils
 
-class TranslationPromptComposer:
+
+class TranslationPromptComposerABC(ABC):
+    '''
+    Utility class that transforms parallel texts to and from a string prompt for LLM training and querying.
+    Prompts are based on a translation instruction, and language labels, and are of the form:
+    INSTRUCTION LABEL1: text1 LABEL2: text2
+    '''
+    @abstractmethod
+    def train_prompt(self, text1: str, text2: str, start_lang: str) -> str:
+        return ""
+    
+    @abstractmethod
+    def query_prompt(self, text: str, start_lang: str) -> str:
+        return ""
+
+
+class TranslationPromptComposer(TranslationPromptComposerABC):
     '''
     Utility class that transforms parallel texts to and from a string prompt for LLM training and querying.
     Prompts are based on a translation instruction, and language labels, and are of the form:
@@ -37,22 +56,69 @@ class TranslationPromptComposer:
         instr = self._instruction + " " if self._instruction else ""
         return f"{instr}{label1}: {text1} {label2}: {text2}"
 
-    def query_prompt(self, text: str, start_lang: str = None) -> str:
+    def query_prompt(self, text: str, start_lang: str) -> str:
         label1, label2 = self._assign_lang_labels(start_lang)
         instr = self._instruction + " " if self._instruction else ""
         return f"{instr}{label1}: {text} {label2}: "
 
-def hr_en_translate_prompt():
+
+class TranslationPromptComposerFromConfig(TranslationPromptComposerABC):
+    '''
+    Utility class that transforms parallel texts to and from a string prompt for LLM training and querying.
+    Prompts are based on a translation instruction, and language labels, and are of the form:
+    INSTRUCTION LABEL1: text1 LABEL2: text2
+    '''
+
+    def __init__(self, prompt_config: str, instruct_lang: str,
+                 randomize_prompts: bool = False, seed: int = 123): 
+        '''
+        :param prompt_config: prompt configuration file name")
+        '''
+        self.prompt_config = config_utils.get_prompts(prompt_config, instruct_lang)
+        self.start_langs = list(self.prompt_config.keys())
+        self.randomize_prompts = randomize_prompts
+        self.rng = np.random.default_rng(seed)
+        self.idx = -1
+        
+    def get_next_instruction(self, start_lang: str) -> str:
+        prompts = self.prompt_config[start_lang]
+        if self.randomize_prompts:
+            self.idx = self.rng.integers(0, len(prompts))
+        else:
+            self.idx = (self.idx + 1) % len(prompts)
+        return prompts[self.idx]
+
+    def train_prompt(self, text1: str, text2: str, start_lang: str) -> str:
+        return self.get_next_instruction(start_lang).format(input=text1, output=text2)
+
+    def query_prompt(self, text1: str, start_lang: str) -> str:
+        return self.get_next_instruction(start_lang).format(input=text1, output="")
+
+
+def get_prompt(prompt_config: str,
+               instruct_lang: str,
+               randomize_prompts: bool = False) -> TranslationPromptComposerABC:
+    '''
+    Factory method for the default translation prompt composer.
+    '''
+    return TranslationPromptComposerFromConfig(
+        prompt_config=prompt_config,
+        instruct_lang=instruct_lang,
+        randomize_prompts=randomize_prompts)
+
+
+def hr_en_translate_prompt() -> TranslationPromptComposerABC:
     '''
     Factory method for the default Croatian-English translation prompt composer.
     '''
     return TranslationPromptComposer(
-         lang1="hr",
-         lang2="en",
-         lang1_label="CROATIAN",
-         lang2_label="ENGLISH",
-         instruction="TRANSLATE:"
+        lang1="hr",
+        lang2="en",
+        lang1_label="CROATIAN",
+        lang2_label="ENGLISH",
+        instruction="TRANSLATE:"
     )
+
 
 def prompt_tst():
     p = hr_en_translate_prompt()
@@ -61,5 +127,33 @@ def prompt_tst():
     print(p.train_prompt('Good day', 'Dobar dan', 'en'))
     print(p.query_prompt('Good day', 'en'))
 
+
+def prompt_tst2():
+    p = get_prompt("mt-en-hr-001", "en", randomize_prompts=True)
+    print("--------------------------------------------")
+    print(p.train_prompt('Dobar dan', 'Good day', 'hr'))
+    print("--------------------------------------------")
+    print(p.query_prompt('Dobar dan', 'hr'))
+    print("--------------------------------------------")
+    print(p.train_prompt('Good day', 'Dobar dan', 'en'))
+    print("--------------------------------------------")
+    print(p.query_prompt('Good day', 'en'))
+    print("--------------------------------------------")
+    p = get_prompt("mt-en-hr-001", "hr")
+    print("--------------------------------------------")
+    print(p.train_prompt('Dobar dan', 'Good day', 'hr'))
+    print("--------------------------------------------")
+    print(p.query_prompt('Dobar dan', 'hr'))
+    print("--------------------------------------------")
+    print(p.train_prompt('Good day', 'Dobar dan', 'en'))
+    print("--------------------------------------------")
+    print(p.query_prompt('Good day', 'en'))
+
+
+def prompt_tst3():
+    p = get_prompt("mt-en-hr-002", "en-hr", randomize_prompts=True)
+    
+
 if __name__ == '__main__':
     prompt_tst()
+    prompt_tst2()

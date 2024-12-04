@@ -1,0 +1,24 @@
+action: evaluation # Start evaluation action
+model: "google/gemma-2-9b-it"
+tokenizer: "google/gemma-2-9b-it"
+# quantization: "fp4"
+device_map: "auto"
+# max_memory: {0: "15GB", 1: "15GB"}
+batch_size: 1
+max_length: 1000
+num_return_sequences: 1 
+do_sample: True  # Optional: Enable sampling for diverse outputs
+top_k: 50  # Optional: Top-k sampling for diversity
+top_p: 0.95  # Optional: Nucleus sampling
+split: "validation"
+prompts: "mt-en-hr-002" # Set prompt configuration file
+start_lang: "en" # Set starting language code
+instruct_lang: "en" # Set instruction language code
+randomize_prompts: True # Set True to randomize prompt variations
+max_examples: 1000 # Set maximal number of examples per dataset to limit computation time during debugging
+datasets: # A list of dataset names
+  - "macocu"
+metrics: # A list of metrics
+  - "bleu"
+  - "meteor"
+  - "rouge"

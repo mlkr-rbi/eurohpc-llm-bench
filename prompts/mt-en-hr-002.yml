@@ -1,0 +1,15 @@
+en: # start language, ie. en-hr
+  en: # instruction language
+    - "Translate following text from English to Croatian without additional notes.\nEnglish:\n{input}\n\nCroatian:\n{output}"
+    - "Translate the following text from English to Croatian. Provide just a direct translation without any additional notes.\nEnglish:\n{input}\n\nCroatian:\n{output}"
+  hr: # instruction language
+    - "Prevedi text u nastavku s engleskog na hrvatski bez dodatnih natuknica.\nEngleski:\n{input}\n\nHrvatski:\n{output}"
+    - "Prevedi text u nastavku s engleskog na hrvatski. Daj samo direktni prijevod bez dodatnih natuknica.\nEngleski:\n{input}\n\nHrvatski:\n{output}"
+
+hr: # start language, ie. hr-en
+  en: # instruction language
+    - "Translate following text from Croatian to English additional notes.\nCroatian:\n{input}\n\nEnglish:\n{output}"
+    - "Translate the following text from Croatian to English. Provide just a direct translation without any additional notes.\nCroatian:\n{input}\n\nEnglish:\n{output}"
+  hr:  # instruction language
+    - "Prevedi text u nastavku s hrvatskog na engleski bez dodatnih natuknica.\nHrvatski:\n{input}\n\nEngleski:\n{output}"
+    - "Prevedi text u nastavku s hrvatskog na engleski. Daj samo direktni prijevod bez dodatnih natuknica.\nHrvatski:\n{input}\n\nEngleski:\n{output}"

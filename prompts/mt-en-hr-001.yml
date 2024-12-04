@@ -1,0 +1,19 @@
+en: # start language, ie. en-hr
+  en: # instruction language
+    - "Translate following text from English to Croatian.\nEnglish:\n{input}\n\nCroatian:\n{output}"
+    - "Translate text.\nEnglish:\n{input}\n\nCroatian:\n{output}"
+    - "Translate.\nEnglish:\n{input}\n\nCroatian:\n{output}"
+  hr: # instruction language
+    - "Prevedi text u nastavku s engleskog na hrvatski.\nEngleski:\n{input}\n\nHrvatski:\n{output}"
+    - "Prevedi text.\nEngleski:\n{input}\n\nHrvatski:\n{output}"
+    - "Prevedi.\nEngleski:\n{input}\n\nHrvatski:\n{output}"
+
+hr: # start language, ie. hr-en
+  en: # instruction language
+    - "Translate following text from Croatian to English.\nCroatian:\n{input}\n\nEnglish:\n{output}"
+    - "Translate text.\nCroatian:\n{input}\n\nEnglish:\n{output}"
+    - "Translate.\nCroatian:\n{input}\n\nEnglish:\n{output}"
+  hr:  # instruction language
+    - "Prevedi text u nastavku s hrvatskog na engleski.\nHrvatski:\n{input}\n\nEngleski:\n{output}"
+    - "Prevedi text.\nHrvatski:\n{input}\n\nEngleski:\n{output}"
+    - "Prevedi.\nHrvatski:\n{input}\n\nEngleski:\n{output}"

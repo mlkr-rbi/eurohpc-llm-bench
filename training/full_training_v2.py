@@ -10,11 +10,13 @@ from pyarrow import set_timezone_db_path
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1, get_test_cro_dataset
 import settings
-from settings import MODEL_TRAINING_OUTPUT, HUGGINGFACE_TOKEN
+from settings import MODEL_TRAINING_OUTPUT
+from utils import config_utils
 
+import argparse
 import yaml
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import torch
 from huggingface_hub import login
@@ -30,9 +32,21 @@ from transformers import (
 from datasets import load_dataset, Dataset, DatasetDict
 
 
-# Load Hugging Face token and login
-def huggingface_login():
-    login(token=HUGGINGFACE_TOKEN)
+def get_parser():
+    parser = argparse.ArgumentParser(
+        prog='cro-gemma',
+        description='The program for training and evaluating LLMs for Croatian language.',
+        )
+    parser.add_argument("--experiment",
+                        help="Path to the experiment config YAML file.",
+                        required=True,
+                        type=str)
+    parser.add_argument("--action",
+                        help="Path to the experiment config YAML file.",
+                        choices=['training'],
+                        required=False,
+                        type=str)
+    return parser
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -148,7 +162,7 @@ def setup_and_run_training(params):
     tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
     tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
     model_id = params['model_id']
-    if 'gemma' in model_id.lower(): huggingface_login()
+    if 'gemma' in model_id.lower(): config_utils.huggingface_login()
     model = create_model(model_id, params['quantize'], params['peft'])
     if 'MODEL_TRAINING_OUTPUT' in params:
         settings.MODEL_TRAINING_OUTPUT = params['MODEL_TRAINING_OUTPUT']
@@ -218,6 +232,11 @@ def run_training_yaml(yaml_file):
     with open(yaml_file, 'r') as file:
         params = yaml.safe_load(file)
     setup_and_run_training(params)
+
+def main(**kwargs):
+    """Run training experiment."""
+    kwargs = config_utils.get_experiment_arguments(**kwargs)
+    setup_and_run_training(kwargs)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2: # experimental code

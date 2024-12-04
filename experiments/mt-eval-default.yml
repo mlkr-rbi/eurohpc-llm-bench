@@ -1,0 +1,11 @@
+# Default configuration for machine translation evaluation task experiments.
+# Do not alter this file unless you want to change default values for all experiments.
+# 
+action: evaluation # Start evaluation action
+model: "google/gemma-2-2b"
+tokenizer: "google/gemma-2-2b"
+device_map: "auto"
+max_length: 50
+batch_size: 1
+prompts: "mt-en-hr-001" # Set prompt configuration file
+instruct_lang: "en" # Set instruction language code
