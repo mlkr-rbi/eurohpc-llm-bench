@@ -8,15 +8,12 @@ from pathlib import Path
 import numpy as np
 from pyarrow import set_timezone_db_path
 
-from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1, get_test_cro_dataset
-import settings
-from settings import MODEL_TRAINING_OUTPUT
+from data_tools.dataset_factory import get_bertic_dataset, get_macocu_text_v1, get_test_cro_dataset
 from utils import config_utils
 
 import argparse
 import yaml
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import torch
 from huggingface_hub import login
@@ -129,7 +126,7 @@ def dataset_loader(label:str) -> DatasetDict:
     Load a dataset for training.
     :return: hf dataset containing train and validation splits
     '''
-    if label == 'macocu_v1': return get_macocu_v1()
+    if label == 'macocu_v1': return get_macocu_text_v1()
     elif label == 'test_cro': return get_test_cro_dataset()
     else: raise ValueError(f"Unknown dataset label: {label}")
 
@@ -148,7 +145,9 @@ def compute_perplexity_metric(eval_pred):
     return {"perplexity": perplexity}
 
 def setup_and_run_training(params):
-    tokenizer_wrapper = TokenizerWrapper(params['model_id'])
+    model_id = params['model_id']
+    if 'gemma' in model_id.lower(): config_utils.huggingface_login()
+    tokenizer_wrapper = TokenizerWrapper(model_id)
     dataset = dataset_loader(params['dataset_label'])
     if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
         train_dataset = dataset['train']
@@ -161,11 +160,9 @@ def setup_and_run_training(params):
         print(f"Training dataset size: {len(train_dataset)}")
     tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
     tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
-    model_id = params['model_id']
-    if 'gemma' in model_id.lower(): config_utils.huggingface_login()
     model = create_model(model_id, params['quantize'], params['peft'])
     if 'MODEL_TRAINING_OUTPUT' in params:
-        settings.MODEL_TRAINING_OUTPUT = params['MODEL_TRAINING_OUTPUT']
+        config_utils.set_models_output_dir(params['MODEL_TRAINING_OUTPUT'])
     do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val, params)
 
 def do_training(model, tokenizer, train_dataset, val_dataset, params):
@@ -173,8 +170,8 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params):
         tokenizer=tokenizer,
         mlm=False
     )
-    output_dir = Path(MODEL_TRAINING_OUTPUT) / params['output_dir_tag']
-    logging_dir = Path(MODEL_TRAINING_OUTPUT) / params['logging_dir_tag']
+    output_dir = config_utils.get_models_output_dir() / params['output_dir_tag']
+    logging_dir = config_utils.get_models_output_dir() / params['logging_dir_tag']
     training_args = TrainingArguments(
         output_dir=output_dir,
         logging_dir=logging_dir,
@@ -225,8 +222,8 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params):
             else:
                 raise e
     timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir.rename(Path(MODEL_TRAINING_OUTPUT) / f"model_{params['model_label']}_{timetag}")
-    logging_dir.rename(Path(MODEL_TRAINING_OUTPUT) / f"logs_{params['model_label']}_{timetag}")
+    output_dir.rename(config_utils.get_models_output_dir() / f"model_{params['model_label']}_{timetag}")
+    logging_dir.rename(config_utils.get_models_output_dir() / f"logs_{params['model_label']}_{timetag}")
 
 def run_training_yaml(yaml_file):
     with open(yaml_file, 'r') as file:

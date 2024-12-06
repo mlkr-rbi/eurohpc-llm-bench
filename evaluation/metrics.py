@@ -1,3 +1,9 @@
+"""Script for metrics.
+
+More info:
+- Machine translation metrics:
+  - https://machinetranslate.org/metrics
+"""
 from evaluate import load
 from functools import partial
 

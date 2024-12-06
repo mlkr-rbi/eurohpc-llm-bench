@@ -1,12 +1,13 @@
-from typing import Union, Any, Dict, Optional
+from typing import Union, Any, Dict, List, Optional
+import os
 from pathlib import Path
-import os.path
 import yaml
 import json
 import datetime
 import time
 import pandas as pd
 from huggingface_hub import login
+import warnings
 
 import settings
 
@@ -16,17 +17,58 @@ def huggingface_login():
     login(token=settings.HUGGINGFACE_TOKEN)
 
 
+def raise_warning(message: str="Warning", stacklevel=2):
+    warnings.warn(message, stacklevel=stacklevel)
+
+
+def raise_deprecated_warning_decorator(function):
+    def f(*args, **kwargs):
+        message = f"The method '{function.__name__}' is deprecated and will be removed!"
+        raise_warning(message, stacklevel=3)
+        return function(*args, **kwargs)
+    return f
+
+
+def get_cwd() -> Path:
+    return Path(os.getcwd())
+
+
 def get_app_root_path() -> Path:
     """Get the application root path. A parent directory of settings.py file."""
     return Path(settings.__file__).parent
 
 
-def get_absolute_path(path: str) -> Path:
-    """Get absolute path from given relative path string."""
-    if os.path.isabs(path):
+def handle_abs_relative_path(path: Union[str, Path],
+                             parent_paths: List[Union[str, Path]]) -> Path:
+    """Handles path given with relative or absolute positioning.
+
+    Args:
+        path (Union[str, Path]): Relative or absolute path.
+        parent_paths (List[Union[str, Path]]): Absolute path of possible parent directories.
+
+    Raises:
+        ValueError: If arg 'parent_path' is not absolute path.
+
+    Returns:
+        Path: Absolute path of the file.
+    """
+    for parent_path in parent_paths:
+        if not os.path.isabs(str(parent_path)):
+            msg = "Arg 'parent_path' must be absolute path! Given path: ", str(parent_path)
+            raise ValueError(msg)
+    if os.path.isabs(str(path)):
         return Path(path)
     else:
-        return get_app_root_path() / path
+        # Check if any path exists - and use the first that exists.
+        for parent_path in parent_paths:
+            p = Path(str(parent_path)) / path
+            if p.exists(): return Path(str(parent_path)) / path
+    # Use the last parent path as parent directory if no combination exists.
+    return p
+
+def get_absolute_path(path: str) -> Path:
+    """Get absolute path from given relative path string."""
+    return handle_abs_relative_path(path, [get_app_root_path()])
 
 
 def get_path_with_suffix(path: Union[str, Path], suffix: str=".yml") -> Union[str, Path]:
@@ -49,7 +91,7 @@ def save_config(config_data: Any, file_path: Union[Path, str]):
         yaml.safe_dump(config_data, file)
 
 
-def save_scores(scores: Any, path: Path|str):
+def save_scores(scores: Any, path: Union[Path, str]):
     with open(path, 'w') as file:
         file.write(json.dumps(scores, sort_keys=True, indent=4))
 
@@ -59,6 +101,16 @@ def save_scores(scores: Any, path: Path|str):
 #     return get_config(get_absolute_path(path))
 
 
+def get_models_output_dir() -> Path:
+    """Get default directory to store new trained models."""
+    return get_absolute_path(settings.MODEL_TRAINING_OUTPUT)
+
+
+def set_models_output_dir(models_output_path: str, Path):
+    """Set default directory to store new trained models."""
+    settings.MODEL_TRAINING_OUTPUT = str(models_output_path)
+
+
 def get_models_dir() -> Path:
     """Get default directory to store custom models."""
     return get_absolute_path(settings.MODELS_DIR)
@@ -66,10 +118,8 @@ def get_models_dir() -> Path:
 
 def get_model_path(model_path: str) -> Path:
     """Get default directory to store custom models."""
-    if os.path.isabs(model_path):
-        return Path(model_path)
-    else:
-        return get_models_dir() / model_path
+    parent_paths = [get_cwd(), get_app_root_path(), get_models_dir()]
+    return handle_abs_relative_path(model_path, parent_paths)
 
 
 def get_datasets_dir() -> Path:
@@ -90,12 +140,10 @@ def create_experiment_output_dir(experiment: str=None):
         experiment (str, optional): The name of the experiment created from experiment configuration file name. Defaults to None.
     """
     global __experiment_output_dir
-    # if experiment.endswith('.yml'):
-    #     experiment = experiment[:-4]
     experiment = Path(experiment).stem
     idx = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     exp_file_name = experiment + "-" + idx
-    path = get_absolute_path(settings.OUTPUTS_DIR) / exp_file_name
+    path = get_outputs_dir() / exp_file_name
     if path.exists():
         time.sleep(1)
         return get_experiment_output_dir(experiment=experiment)
@@ -138,7 +186,7 @@ def get_experiment_output_prediction_file(dataset_name: str,
 
 def get_experiment_output_prediction(dataset_name: str,
                                      experiment_output_dir: Path=None,
-                                     experiment: str=None) -> dict[str, list[str]]:
+                                     experiment: str=None) -> Dict[str, List[str]]:
     """Get inputs, outputs and predictions for given dataset in experiment output directory.
 
     Args:
@@ -147,7 +195,7 @@ def get_experiment_output_prediction(dataset_name: str,
         experiment (str, optional): The name of the experiment created from experiment configuration file name. Defaults to None.
 
     Returns:
-        dict[str, list[str]]: Dictionary with inputs, outputs and predictions for given dataset. 
+        Dict[str, List[str]]: Dictionary with inputs, outputs and predictions for given dataset. 
     """
     pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment)
     df = pd.read_csv(pred_file)
@@ -159,18 +207,18 @@ def get_experiment_output_prediction(dataset_name: str,
     return ans
 
 
-def save_experiment_output_prediction(inputs: list[str],
-                                      outputs: list[str],
-                                      predictions: list[str],                                     
+def save_experiment_output_prediction(inputs: List[str],
+                                      outputs: List[str],
+                                      predictions: List[str],                                     
                                       dataset_name: str,
                                       experiment_output_dir: Path=None,
                                       experiment: str=None):
     """Save inputs, outputs and predictions for given dataset in experiment output directory.
 
     Args:
-        inputs (list[str]): List of input texts.
-        outputs (list[str]): List of output texts. References or golden standard.
-        predictions (list[str]): List of predictions, ie. texts generated by the model.
+        inputs (List[str]): List of input texts.
+        outputs (List[str]): List of output texts. References or golden standard.
+        predictions (List[str]): List of predictions, ie. texts generated by the model.
         dataset_name (str): The name of dataset for which we want prediction file.
         experiment_output_dir (Path, optional): Experiment output directory path. Defaults to None.
         experiment (str, optional): The name of the experiment created from experiment configuration file name. Defaults to None.
@@ -275,12 +323,8 @@ def get_prompts_dir() -> Path:
 def get_prompts(prompt_name_or_path: str, instruction_lang: str='en') -> Dict:
     """Get prompt configuration."""
     path = get_path_with_suffix(prompt_name_or_path, ".yml")
-    # Try if prompt conf path is absolute or relative to the working dir
-    try:
-        config = get_config(path)
-    # If not, use relative path to default prompts config dir.
-    except:
-        config = get_config(get_prompts_dir() / path)
+    parent_paths = [get_cwd(), get_app_root_path(), get_prompts_dir()]
+    config = get_config(handle_abs_relative_path(path, parent_paths))
     # Check if instruction language exist
     if instruction_lang not in config.keys():
         raise KeyError(
@@ -297,12 +341,8 @@ def get_experiments_dir() -> Path:
 def get_experiment(experiment_name_or_path: str) -> Dict:
     """Get experiment configuration."""
     path = get_path_with_suffix(experiment_name_or_path, ".yml")
-    # Try if experiment conf path is absolute or relative to the working dir
-    try:
-        return get_config(get_absolute_path(path))
-    # If not, use relative path to default experiments config dir.
-    except:
-        return get_config(get_experiments_dir() / path)
+    parent_paths = [get_cwd(), get_app_root_path(), get_experiments_dir()]
+    return get_config(handle_abs_relative_path(path, parent_paths))
 
 
 def get_default_experiment(action: str=None) -> Dict:
@@ -319,18 +359,19 @@ def get_macocu_sentences_file_path():
 
 
 def get_macocu_pairs_dataset_dir():
-    return get_datasets_dir() / "macocu_train_dset_v1_pairs"
+    return get_datasets_dir() / settings.MACOCU_PAIRS_DATASET_NAME
 
 
 def get_macocu_text_dataset_dir():
-    return get_datasets_dir() / "macocu_train_dset_v1_text"
+    return get_datasets_dir() / settings.MACOCU_TEXT_DATASET_NAME
     
-
+    
+@raise_deprecated_warning_decorator
 def get_macocu_dataset_dir():
     return get_absolute_path(settings.MACOCU_DATASET_V1)
 
 
-def get_experiment_arguments(action: str=None, **kwargs) -> dict[str, Any]:
+def get_experiment_arguments(action: str=None, **kwargs) -> Dict[str, Any]:
     # Get default experiment config
     exp_config = get_default_experiment(action)
     # Update experiment config from given experiment custom config file

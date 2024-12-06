@@ -9,22 +9,19 @@ Sources:
 - GPU HF Inference: https://huggingface.co/docs/transformers/perf_infer_gpu_one
 
 """
-import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+from typing import Dict, List
+from pathlib import Path
+import argparse
+from tqdm import tqdm
 
 from transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
 from transformers import BitsAndBytesConfig
 
-import argparse
-from tqdm import tqdm
-from pathlib import Path
-from utils import config_utils
-
 from data_tools.dataset_factory import get_original_dataset
 from data_tools.prompt_tools import get_prompt
 from evaluation.metrics import get_metric
-
+from utils import config_utils
 
 
 QUANTIZATION_CONFIGS = {
@@ -121,7 +118,7 @@ def get_parser():
     return parser
     
 
-def map_kwargs(mapping: dict[str, str], **kwargs):
+def map_kwargs(mapping: Dict[str, str], **kwargs):
     _kwargs = {}
     for k in kwargs:
         if k in mapping:
@@ -174,7 +171,7 @@ def get_dataset(dataset_name: str,
     return dataset
 
 
-def get_datasets(datasets: list[str],
+def get_datasets(datasets: List[str],
                  prompts: str,
                  start_lang: str,
                  instruct_lang: str, 
@@ -193,6 +190,8 @@ def predict(**kwargs):
     model = get_model(**kwargs)
     tokenizer = get_tokenizer(**kwargs)
     datasets = get_datasets(**kwargs)
+    # Enable cache
+    model.config.use_cache = True
     # Make and save predictions for each dataset        
     for dataset_name in datasets:
         predictions = []
@@ -211,7 +210,6 @@ def predict(**kwargs):
             # Generate tokens using the model
             _kwargs = map_kwargs(GENERATE_KWARGS_MAP, **kwargs)
             terminators = [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("\n")] # TODO: terminators are not working
-            print(model.device, input_ids.device)
             outputs = model.generate(input_ids, eos_token_id=terminators, **_kwargs)
             # Decode the generated tokens back to text
             generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -224,13 +222,13 @@ def predict(**kwargs):
                                                        experiment=kwargs['experiment'])
 
 
-def evaluate_predictions(predictions: list[str],
-                         references: list[str],
-                         metrics: list[str]=["bleu"]) -> dict[str, float]:
+def evaluate_predictions(predictions: List[str],
+                         references: List[str],
+                         metrics: List[str]=["bleu"]) -> Dict[str, float]:
     return {m: get_metric(m).compute(predictions=predictions, references=references) for m in metrics}
 
 
-def evaluate_experiment_predictions(experiment_output_dir: Path=None) -> dict[str, list[str]]:
+def evaluate_experiment_predictions(experiment_output_dir: Path=None) -> Dict[str, List[str]]:
     """Evaluate predictions on all dataset in experiment output directory.
 
     Args:

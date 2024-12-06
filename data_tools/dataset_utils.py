@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from huggingface_hub import login
 
 from data_tools.prompt_tools import TranslationPromptComposer
-from settings import HUGGINGFACE_TOKEN
+from utils import config_utils
 
 
 class HFTokenCounter:
@@ -59,7 +59,7 @@ def split_tst():
     print({key: len(value) for key, value in split_datasets.items()})
 
 def token_counter_tst():
-    login(HUGGINGFACE_TOKEN)
+    config_utils.huggingface_login()
     counter = HFTokenCounter('google/gemma-2-2b')
     print(counter('hello world'))
     print(counter('o what a tangled web we weave when first we practice to deceive'))

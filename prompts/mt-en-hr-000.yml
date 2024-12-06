@@ -6,6 +6,6 @@ en: # start language, ie. en-hr
 
 hr: # start language, ie. hr-en
   en: # instruction language
-    - "TRANSLATE: ROATIAN: {input} ENGLISH: {output}"
+    - "TRANSLATE: CROATIAN: {input} ENGLISH: {output}"
   hr:  # instruction language
     - "PREVEDI:HRVATSKI: {input} ENGLESKI: {output}"

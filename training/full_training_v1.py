@@ -6,13 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
-from data_tools.dataset_factory import get_bertic_dataset, get_macocu_v1
-from settings import MODEL_TRAINING_OUTPUT, HUGGINGFACE_TOKEN
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+from data_tools.dataset_factory import get_bertic_dataset, get_macocu_text_v1
+from utils import config_utils
 
 import torch
-from huggingface_hub import login
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     TrainingArguments,
@@ -24,10 +21,6 @@ from transformers import (
 )
 from datasets import load_dataset, Dataset
 
-
-# Load Hugging Face token and login
-def huggingface_login():
-    login(token=HUGGINGFACE_TOKEN)
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -102,7 +95,7 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
     return model
 
 def setup_and_run_training(model_id, model_label, dataset: Dataset = None, production=False):
-    if 'gemma' in model_id.lower(): huggingface_login()
+    if 'gemma' in model_id.lower(): config_utils.huggingface_login()
     tokenizer_wrapper = TokenizerWrapper(model_id)
     train_dataset = dataset['train']
     val_dataset = dataset['validation']
@@ -136,9 +129,9 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
     )
     # if the folders are present, the training will be restarted
     output_dir_tag = f"model_{model_label}"
-    output_dir = Path(MODEL_TRAINING_OUTPUT)/output_dir_tag
+    output_dir = config_utils.get_models_output_dir() / output_dir_tag
     logging_dir_tag = f"logs_{model_label}"
-    logging_dir = Path(MODEL_TRAINING_OUTPUT)/logging_dir_tag
+    logging_dir = config_utils.get_models_output_dir() / logging_dir_tag
     train_dataset.set_format(type='torch', device='cuda')
     val_dataset.set_format(type='torch', device='cuda')
     if production: # set params for production-level long runs
@@ -209,10 +202,10 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
                 raise e
     # save the model and the log to timestamped folders (rename the folders)
     timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"model_{model_label}_{timetag}")
-    logging_dir.rename(Path(MODEL_TRAINING_OUTPUT)/f"logs_{model_label}_{timetag}")
+    output_dir.rename(config_utils.get_models_output_dir() / f"model_{model_label}_{timetag}")
+    logging_dir.rename(config_utils.get_models_output_dir() / f"logs_{model_label}_{timetag}")
 
 if __name__ == "__main__":
-    setup_and_run_training(model_id="google/gemma-2-2b", model_label="gemma-2-2b", dataset=get_macocu_v1())
+    setup_and_run_training(model_id="google/gemma-2-2b", model_label="gemma-2-2b", dataset=get_macocu_text_v1())
     #print(get_test_cro_dataset())
     #get_bertic_dataset()

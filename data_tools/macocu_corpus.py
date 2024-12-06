@@ -16,9 +16,7 @@ from data_tools.dataset_utils import HFTokenCounter, split_hf_dataset, pairs_to_
 from data_tools.prompt_tools import TranslationPromptComposer, hr_en_translate_prompt
 
 # from settings import MACOCU_SENTENCES_FILE
-from utils.config_utils import get_macocu_sentences_file_path
-from utils.config_utils import get_macocu_pairs_dataset_dir
-from utils.config_utils import get_macocu_text_dataset_dir
+from utils import config_utils
 
 def macocu_sentence_load(file_path: str, print_columns=False) -> DataFrame:
     '''
@@ -102,7 +100,7 @@ def create_macocu_final_dset_v1(fpath, size, train_ratio=0.8, test_ratio=0.1,
         for split, split_dset in dataset.items():
             print_dset_sample(split_dset, split, 10)
             print('\n')
-    dataset.save_to_disk(get_macocu_pairs_dataset_dir())
+    dataset.save_to_disk(str(config_utils.get_macocu_pairs_dataset_dir()))
     if create_text_dset:
         # dataset for direct training, replace pairs with single-string instruction prompts, and shuffle
         # do not touch 'test' split since it can be used for true translation evaluation
@@ -112,12 +110,18 @@ def create_macocu_final_dset_v1(fpath, size, train_ratio=0.8, test_ratio=0.1,
             print_dset_sample(dataset['train'], 'train', 20)
             print()
             print_dset_sample(dataset['validation'], 'validation', 20)
-        dataset.save_to_disk(get_macocu_text_dataset_dir())
+        dataset.save_to_disk(str(config_utils.get_macocu_text_dataset_dir()))
+
+# def create_macocu_dset_v1(size: int=100000):
+def create_macocu_dset_v1(size: int=1000):
+    """Create macocu HF dataset."""
+    create_macocu_final_dset_v1(config_utils.get_macocu_sentences_file_path(), size=size,
+                                train_ratio=0.7, test_ratio=0.15, val_ratio=0.15,
+                                print_dsets=True, create_text_dset=True)
+
 
 if __name__ == "__main__":
     #macocu_sentence_load('/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/MaCoCu-hr-en.sent.10000.txt', True)
     #macocu_sentence_analyze()
     #create_macocu_train_dset_v1(MACOCU_SENTENCES_FILE, size=50, print_dsets=True) # test version
-    create_macocu_final_dset_v1(get_macocu_sentences_file_path(), size=100000,
-                                train_ratio=0.7, test_ratio=0.15, val_ratio=0.15,
-                                print_dsets=True, create_text_dset=True)
+    create_macocu_dset_v1()

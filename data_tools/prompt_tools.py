@@ -1,6 +1,7 @@
 '''
 Utility classes for creating translation prompts for LLM training and querying.
 '''
+from typing import Tuple
 from abc import ABC, abstractmethod
 import numpy as np
 from utils import config_utils
@@ -41,7 +42,7 @@ class TranslationPromptComposer(TranslationPromptComposerABC):
         self._lang2_label = lang2_label if lang2_label else lang2
         self._instruction = instruction
 
-    def _assign_lang_labels(self, start_lang: str) -> tuple[str, str]:
+    def _assign_lang_labels(self, start_lang: str) -> Tuple[str, str]:
         ''' Create the 2 language labels in the appropriate order, based on the start language. '''
         if start_lang == self._lang1:
             label1, label2 = self._lang1_label, self._lang2_label
