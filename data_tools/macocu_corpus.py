@@ -112,8 +112,7 @@ def create_macocu_final_dset_v1(fpath, size, train_ratio=0.8, test_ratio=0.1,
             print_dset_sample(dataset['validation'], 'validation', 20)
         dataset.save_to_disk(str(config_utils.get_macocu_text_dataset_dir()))
 
-# def create_macocu_dset_v1(size: int=100000):
-def create_macocu_dset_v1(size: int=1000):
+def create_macocu_dset_v1(size: int=100000):
     """Create macocu HF dataset."""
     create_macocu_final_dset_v1(config_utils.get_macocu_sentences_file_path(), size=size,
                                 train_ratio=0.7, test_ratio=0.15, val_ratio=0.15,
