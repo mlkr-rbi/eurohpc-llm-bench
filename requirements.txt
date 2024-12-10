@@ -11,6 +11,7 @@ scikit_learn
 seaborn
 torch
 tqdm
+datasets
 transformers
 langchain-huggingface
 bitsandbytes
