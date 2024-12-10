@@ -46,7 +46,7 @@ def get_parser():
     return parser
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
@@ -60,7 +60,7 @@ class TokenizerWrapper():
     '''
 
     def __init__(self, model_id, max_seq_length: int = 512):
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "right"
         self.tokenizer = tokenizer
@@ -94,7 +94,7 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
             bnb_4bit_use_double_quant=quantize_params['bnb_4bit_use_double_quant'],
         )
         model = AutoModelForCausalLM.from_pretrained(
-            model_id,
+            config_utils.get_model_path(model_id),
             quantization_config=bnb_config,
             device_map="auto",
             trust_remote_code=True
@@ -103,7 +103,7 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
         model = prepare_model_for_kbit_training(model)
     else:
         model = AutoModelForCausalLM.from_pretrained(
-            model_id,
+            config_utils.get_model_path(model_id),
             device_map="auto",
             trust_remote_code=True
         )

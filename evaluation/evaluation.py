@@ -225,7 +225,8 @@ def predict(**kwargs):
 def evaluate_predictions(predictions: List[str],
                          references: List[str],
                          metrics: List[str]=["bleu"]) -> Dict[str, float]:
-    return {m: get_metric(m).compute(predictions=predictions, references=references) for m in metrics}
+    references = [[r] for r in references] # TODO: This is a fast hack - for one hypothesis in reference
+    return {m: get_metric(m)(predictions=predictions, references=references) for m in metrics}
 
 
 def evaluate_experiment_predictions(experiment_output_dir: Path=None) -> Dict[str, List[str]]:

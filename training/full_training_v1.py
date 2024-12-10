@@ -23,7 +23,7 @@ from datasets import load_dataset, Dataset
 
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
@@ -37,7 +37,7 @@ class TokenizerWrapper():
     '''
 
     def __init__(self, model_id, max_seq_length: int = 512):
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "right"
         self.tokenizer = tokenizer
@@ -73,7 +73,7 @@ def create_model(model_id: str = "google/gemma-2-2b", quantize=True, peft=True):
     else:
         bnb_config = None
     model = AutoModelForCausalLM.from_pretrained(
-        model_id,
+        config_utils.get_model_path(model_id),
         quantization_config=bnb_config,
         device_map="auto",
         trust_remote_code=True

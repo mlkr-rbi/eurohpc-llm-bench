@@ -1,5 +1,5 @@
+pysqlite3
 accelerate
-evaluate
 huggingface_hub
 matplotlib
 numpy
@@ -17,3 +17,4 @@ bitsandbytes
 tensorboard
 nltk
 rouge-score
+# tf-keras

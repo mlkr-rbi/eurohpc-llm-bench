@@ -20,5 +20,7 @@ datasets: # A list of dataset names
   - "macocu-pairs"
 metrics: # A list of metrics
   - "bleu"
-  - "meteor"
-  - "rouge"
+  - "gleu"
+  - "chrf"
+  - "nist"
+  - "ribes"
