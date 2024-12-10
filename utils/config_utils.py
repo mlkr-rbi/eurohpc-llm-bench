@@ -12,11 +12,6 @@ import warnings
 import settings
 
 
-def huggingface_login():
-    """Load Hugging Face token and login"""
-    login(token=settings.HUGGINGFACE_TOKEN)
-
-
 def raise_warning(message: str="Warning", stacklevel=2):
     warnings.warn(message, stacklevel=stacklevel)
 
@@ -27,6 +22,14 @@ def raise_deprecated_warning_decorator(function):
         raise_warning(message, stacklevel=3)
         return function(*args, **kwargs)
     return f
+
+
+def huggingface_login():
+    """Load Hugging Face token and login"""
+    try:
+        login(token=settings.HUGGINGFACE_TOKEN)
+    except:
+        raise_warning("HUGGINGFACE login FAILED!")
 
 
 def get_cwd() -> Path:
