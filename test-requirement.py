@@ -1,5 +1,4 @@
 import accelerate
-import evaluate
 import huggingface_hub
 import matplotlib
 import numpy
@@ -16,4 +15,4 @@ import langchain_huggingface
 import bitsandbytes
 import tensorboard
 import nltk
-import rouge_score
+# import rouge_score

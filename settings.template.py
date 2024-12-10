@@ -3,14 +3,13 @@
 import os
 current_module_path = os.path.abspath(os.path.dirname(__file__))
 
-### Using MODEL_TRAINING_OUTPUT will soon be deprecated!!!
-### In the future all models will be placed within directory DATASETS_DIR!
-MODEL_TRAINING_OUTPUT = ''
+### Change username with your name please - so we all know who produce these models
+MODEL_TRAINING_OUTPUT = 'datasets/username'
 
 HUGGINGFACE_TOKEN = ''
 
 # tab-separated .txt file with parallel en-hr sentences
-MACOCU_SENTENCES_FILE = ''
+MACOCU_SENTENCES_FILE = 'datasets/MaCoCu-hr-en.sent.txt'
 
 ### Don't use MACOCU_DATASET_V1 - it is deprecated and will be removed!!!
 MACOCU_DATASET_V1 = '' # pre-processed dataset, in huggingface dataset format, ready to use
