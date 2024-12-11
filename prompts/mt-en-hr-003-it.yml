@@ -1,0 +1,23 @@
+# prompts for instruction tuned models - contain special tokens for instruction following:
+# https://ai.google.dev/gemma/docs/formatting
+
+en: # instruction language
+  en: # start language, ie. en-hr
+    - "<start_of_turn>user\nTranslate to Croatian:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate to Croatian from English:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate from English to Croatian:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate from EN to HR:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+  hr: # start language, ie. hr-en
+    - "<start_of_turn>user\nTranslate to English:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate from Croatian to English:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate to English from Croatian:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nTranslate from HR to EN:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+hr: # instruction language
+  en: # start language, ie. en-hr
+    - "<start_of_turn>user\nPrevedi na hrvatski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nPrevedi s engleskog na hrvatski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nPrevedi tekst s engleskog na hrvatski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+  hr: # start language, ie. hr-en
+    - "<start_of_turn>user\nPrevedi na engleski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nPrevedi s hrvatskog na engleski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"
+    - "<start_of_turn>user\nPrevedi tekst s hrvatskog na engleski:\n{input}<end_of_turn>\n<start_of_turn>model\n{output}<end_of_turn>\n"

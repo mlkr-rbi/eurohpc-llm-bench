@@ -71,15 +71,18 @@ class TranslationPromptComposerFromConfig(TranslationPromptComposerABC):
     '''
 
     def __init__(self, prompt_config: str, instruct_lang: str,
-                 randomize_prompts: bool = False, seed: int = 123): 
+                 randomize_prompts: bool = False, seed: int = 123, instruction_tune: bool = False):
         '''
         :param prompt_config: prompt configuration file name")
+        :param instruction_tune: patch to properly handle query formatting for instruction-tune prompts
+        # TODO: handle instruction-tune prompt composition in a more general way
         '''
         self.prompt_config = config_utils.get_prompts(prompt_config, instruct_lang)
         self.start_langs = list(self.prompt_config.keys())
         self.randomize_prompts = randomize_prompts
         self.rng = np.random.default_rng(seed)
         self.idx = -1
+        self.instruction_tune = instruction_tune
         
     def get_next_instruction(self, start_lang: str) -> str:
         prompts = self.prompt_config[start_lang]
@@ -93,19 +96,24 @@ class TranslationPromptComposerFromConfig(TranslationPromptComposerABC):
         return self.get_next_instruction(start_lang).format(input=text1, output=text2)
 
     def query_prompt(self, text1: str, start_lang: str) -> str:
-        return self.get_next_instruction(start_lang).format(input=text1, output="")
-
+        prompt = self.get_next_instruction(start_lang).format(input=text1, output="")
+        if not self.instruction_tune: return prompt
+        else: # remove '<end_of_turn>\n' from the prompt
+            assert prompt.endswith('<end_of_turn>\n')
+            return prompt[:-len('<end_of_turn>\n')]
 
 def get_prompt(prompt_config: str,
                instruct_lang: str,
-               randomize_prompts: bool = False) -> TranslationPromptComposerABC:
+               randomize_prompts: bool = False,
+               instruction_tune: bool = False) -> TranslationPromptComposerABC:
     '''
     Factory method for the default translation prompt composer.
     '''
     return TranslationPromptComposerFromConfig(
         prompt_config=prompt_config,
         instruct_lang=instruct_lang,
-        randomize_prompts=randomize_prompts)
+        randomize_prompts=randomize_prompts,
+        instruction_tune=instruction_tune)
 
 
 def hr_en_translate_prompt() -> TranslationPromptComposerABC:
