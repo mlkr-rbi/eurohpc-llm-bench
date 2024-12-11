@@ -10,6 +10,7 @@ HUGGINGFACE_TOKEN = ''
 
 # tab-separated .txt file with parallel en-hr sentences
 MACOCU_SENTENCES_FILE = 'datasets/MaCoCu-hr-en.sent.txt'
+MACOCU_SENTENCES_FILE_SMALL = 'datasets/MaCoCu-hr-en.sent.1000.txt' # for development purposes
 
 ### Don't use MACOCU_DATASET_V1 - it is deprecated and will be removed!!!
 MACOCU_DATASET_V1 = '' # pre-processed dataset, in huggingface dataset format, ready to use
