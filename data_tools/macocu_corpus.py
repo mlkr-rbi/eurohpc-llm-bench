@@ -13,7 +13,7 @@ import seaborn as sns
 from datasets import Dataset
 
 from data_tools.dataset_utils import HFTokenCounter, split_hf_dataset, pairs_to_instructions, print_dset_sample
-from data_tools.prompt_tools import TranslationPromptComposer, hr_en_translate_prompt
+from data_tools.prompt_tools import TranslationPromptComposer, hr_en_translate_prompt, get_prompt
 
 # from settings import MACOCU_SENTENCES_FILE
 from utils import config_utils
@@ -86,6 +86,30 @@ def macocu_dataset_creator(df: DataFrame, pc: TranslationPromptComposer,
     # create huggingface Dataset from result
     return Dataset.from_dict(result)
 
+def macocu_token_length_analyser(df: DataFrame, pc: TranslationPromptComposer,
+                           token_counter: Callable[[str], int], max_tokens: int, size: int):
+    for i, row in df.iterrows():
+        txt_hr = row['src_text']
+        txt_en = row['trg_text']
+        hr2en = pc.train_prompt(txt_hr, txt_en, 'hr')
+        en2hr = pc.train_prompt(txt_en, txt_hr,'en')
+        #hr2en = pc.query_prompt(txt_hr, 'hr')
+        #en2hr = pc.query_prompt(txt_en, 'en')
+        print('**********')
+        print(hr2en)
+        print('**********')
+        print(en2hr)
+        print('**********')
+        print()
+        if (i==6): break
+
+def run_macocu_length_analysis():
+    df = macocu_sentence_load('/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/MaCoCu-hr-en.sent.10000.txt')
+    prompt_composer = get_prompt("mt-en-hr-003-it", "en",
+                                 randomize_prompts=True, instruction_tune=True)
+    counter = HFTokenCounter('google/gemma-2-2b')
+    macocu_token_length_analyser(df, prompt_composer, counter, 512, 1000)
+
 def create_macocu_final_dset_v1(fpath, size, train_ratio=0.8, test_ratio=0.1,
                                 val_ratio=0.1, max_tokens=512, print_dsets=False, create_text_dset=False):
     '''
@@ -123,4 +147,5 @@ if __name__ == "__main__":
     #macocu_sentence_load('/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/MaCoCu-hr-en.sent.10000.txt', True)
     #macocu_sentence_analyze()
     #create_macocu_train_dset_v1(MACOCU_SENTENCES_FILE, size=50, print_dsets=True) # test version
-    create_macocu_dset_v1()
+    #create_macocu_dset_v1()
+    run_macocu_length_analysis()
