@@ -5,25 +5,28 @@ https://www.clarin.si/repository/xmlui/handle/11356/1814
 
 import csv
 import random
-from typing import Callable
+from typing import Callable, Iterable, Union
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datasets import Dataset
 
 from data_tools.dataset_utils import HFTokenCounter, split_hf_dataset, pairs_to_instructions, print_dset_sample
 from data_tools.prompt_tools import TranslationPromptComposer, hr_en_translate_prompt, get_prompt
+from settings import MACOCU_SENTENCES_FILE_SMALL, MACOCU_SENTENCES_FILE
 
 # from settings import MACOCU_SENTENCES_FILE
 from utils import config_utils
 
-def macocu_sentence_load(file_path: str, print_columns=False) -> DataFrame:
+def macocu_sentence_load(file_path: str, verbose=False) -> DataFrame:
     '''
     Loader of MaCoCu parallel en-hr sentences corpus from .txt file to a pandas DataFrame.
     '''
     df = pd.read_csv(file_path, header=0, sep="\t", encoding='utf-8', quoting= csv.QUOTE_NONE)
-    if print_columns: print(df.dtypes) # Print column names and their types
+    if verbose:
+        print('Dataset size', len(df))
+        print(df.dtypes) # Print column names and their types
     return df
 
 def macocu_analyze_score(df: DataFrame, score='bicleaner_ai_score'):
@@ -86,29 +89,55 @@ def macocu_dataset_creator(df: DataFrame, pc: TranslationPromptComposer,
     # create huggingface Dataset from result
     return Dataset.from_dict(result)
 
+def analyze_numbers(numbers: Union[Series, Iterable[int]], label: str = 'score'):
+    '''
+    Print 5-number summary and plot histogram of a sequence of numbers.
+    :param numbers:
+    :param label: string label to use in the printout and the plot
+    :return:
+    '''
+    if not isinstance(numbers, Series): numbers = pd.Series(numbers)
+    summary = numbers.describe()
+    print(f"5-Number Summary of {label}:")
+    print(summary)
+    # Plot the histogram
+    plt.figure(figsize=(10, 6))
+    sns.histplot(numbers.dropna(), bins=30, color='blue', kde=True)
+    plt.title(f'Histogram of {label}')
+    plt.xlabel(label)
+    plt.ylabel('Frequency')
+    plt.savefig(f'{label}_hist.png')
+
 def macocu_token_length_analyser(df: DataFrame, pc: TranslationPromptComposer,
-                           token_counter: Callable[[str], int], max_tokens: int, size: int):
-    for i, row in df.iterrows():
+                           token_counter: Callable[[str], int], subsample: int = None, rnd_seed: int = 7451):
+    if subsample and subsample < len(df):
+        df = df.sample(n=subsample, random_state=rnd_seed)
+        print('Subsampled data.')
+    prompt_lens = []
+    raw_lens = []
+    cnt = 0
+    for _, row in df.iterrows():
+        cnt += 1
         txt_hr = row['src_text']
         txt_en = row['trg_text']
         hr2en = pc.train_prompt(txt_hr, txt_en, 'hr')
         en2hr = pc.train_prompt(txt_en, txt_hr,'en')
-        #hr2en = pc.query_prompt(txt_hr, 'hr')
-        #en2hr = pc.query_prompt(txt_en, 'en')
-        print('**********')
-        print(hr2en)
-        print('**********')
-        print(en2hr)
-        print('**********')
-        print()
-        if (i==6): break
+        prmpt_len = (token_counter(hr2en) + token_counter(en2hr)) / 2
+        raw_len = (token_counter(txt_hr) + token_counter(txt_en))
+        prompt_lens.append(prmpt_len)
+        raw_lens.append(raw_len)
+        if cnt % 1000 == 0: print(f"Processed {cnt} sentences.")
+    analyze_numbers(prompt_lens, 'prompt_length')
+    analyze_numbers(raw_lens, 'raw_length')
 
 def run_macocu_length_analysis():
-    df = macocu_sentence_load('/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/MaCoCu-hr-en.sent.10000.txt')
+    #df = macocu_sentence_load(MACOCU_SENTENCES_FILE_SMALL)
+    df = macocu_sentence_load(MACOCU_SENTENCES_FILE, verbose=True)
+    print('Data loaded.')
     prompt_composer = get_prompt("mt-en-hr-003-it", "en",
                                  randomize_prompts=True, instruction_tune=True)
-    counter = HFTokenCounter('google/gemma-2-2b')
-    macocu_token_length_analyser(df, prompt_composer, counter, 512, 1000)
+    counter = HFTokenCounter('google/gemma-2-2b-it')
+    macocu_token_length_analyser(df, prompt_composer, counter, subsample=100000)
 
 def create_macocu_final_dset_v1(fpath, size, train_ratio=0.8, test_ratio=0.1,
                                 val_ratio=0.1, max_tokens=512, print_dsets=False, create_text_dset=False):
