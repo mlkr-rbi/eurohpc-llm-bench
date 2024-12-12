@@ -30,6 +30,7 @@ experiments/*
 !prompts/mt-en-hr-000.yml
 !prompts/mt-en-hr-001.yml
 !prompts/mt-en-hr-002.yml
+!prompts/mt-en-hr-003-it.yml
 !experiments/mt-eval-2b-it-v000.yml
 !experiments/mt-eval-2b-peft-3epochs_lr2e-4-2024-12-01-v000.yml
 !experiments/mt-eval-2b-peft-5epochs_lr2e-5-2024-12-01-v000.yml
