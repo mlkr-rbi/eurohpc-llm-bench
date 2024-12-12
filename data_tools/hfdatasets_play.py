@@ -58,5 +58,16 @@ def resplit_dataset(dataset_id: str):
         print(f"{split_name} class distribution:")
         print(split_data.to_pandas()["label"].value_counts(normalize=True))
 
+def nllb_dset():
+    # ("eng_Latn", "hrv_Latn"),
+    dataset = load_dataset("allenai/nllb", "eng_Latn-hrv_Latn")
+    print(dataset)
+
+def bactrianx_dset():
+    dataset = load_dataset("MBZUAI/Bactrian-X", "hr")
+    print(dataset)
+    print(dataset["train"][0])
+
 if __name__ == "__main__":
-    resplit_dataset("ag_news")
+    #resplit_dataset("ag_news")
+    bactrianx_dset()

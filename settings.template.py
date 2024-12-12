@@ -11,6 +11,7 @@ HUGGINGFACE_TOKEN = ''
 # tab-separated .txt file with parallel en-hr sentences
 MACOCU_SENTENCES_FILE = 'datasets/MaCoCu-hr-en.sent.txt'
 MACOCU_SENTENCES_FILE_SMALL = 'datasets/MaCoCu-hr-en.sent.1000.txt' # for development purposes
+MACOCU_SENT_ORIG_HF = '/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/macocu_sent_hf_dataset/' # full original macocu, in the HF dataset format
 
 ### Don't use MACOCU_DATASET_V1 - it is deprecated and will be removed!!!
 MACOCU_DATASET_V1 = '' # pre-processed dataset, in huggingface dataset format, ready to use

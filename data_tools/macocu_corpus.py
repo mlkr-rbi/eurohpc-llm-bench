@@ -14,7 +14,7 @@ from datasets import Dataset
 
 from data_tools.dataset_utils import HFTokenCounter, split_hf_dataset, pairs_to_instructions, print_dset_sample
 from data_tools.prompt_tools import TranslationPromptComposer, hr_en_translate_prompt, get_prompt
-from settings import MACOCU_SENTENCES_FILE_SMALL, MACOCU_SENTENCES_FILE
+from settings import MACOCU_SENTENCES_FILE_SMALL, MACOCU_SENTENCES_FILE, MACOCU_SENT_ORIG_HF
 
 # from settings import MACOCU_SENTENCES_FILE
 from utils import config_utils
@@ -28,6 +28,13 @@ def macocu_sentence_load(file_path: str, verbose=False) -> DataFrame:
         print('Dataset size', len(df))
         print(df.dtypes) # Print column names and their types
     return df
+
+def macocu_sentence_to_huggingface():
+    #df = macocu_sentence_load(MACOCU_SENTENCES_FILE_SMALL, verbose=True)
+    df = macocu_sentence_load(MACOCU_SENTENCES_FILE, verbose=True)
+    hf_ds = Dataset.from_pandas(df)
+    hf_ds.save_to_disk(MACOCU_SENT_ORIG_HF)
+    print(hf_ds)
 
 def macocu_analyze_score(df: DataFrame, score='bicleaner_ai_score'):
     scores = df[score]
@@ -177,4 +184,5 @@ if __name__ == "__main__":
     #macocu_sentence_analyze()
     #create_macocu_train_dset_v1(MACOCU_SENTENCES_FILE, size=50, print_dsets=True) # test version
     #create_macocu_dset_v1()
-    run_macocu_length_analysis()
+    #run_macocu_length_analysis()
+    macocu_sentence_to_huggingface()
