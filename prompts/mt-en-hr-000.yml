@@ -1,11 +1,11 @@
-en: # start language, ie. en-hr
-  en: # instruction language
+en: # instruction language
+  en: # start language, ie. en-hr
     - "TRANSLATE:ENGLISH: {input} CROATIAN: {output}"
-  hr: # instruction language
-    - "PREVEDI:ENGLESKI: {input} HRVATSKI: {output}"
-
-hr: # start language, ie. hr-en
-  en: # instruction language
+  hr: # start language, ie. hr-en
     - "TRANSLATE: CROATIAN: {input} ENGLISH: {output}"
-  hr:  # instruction language
+
+hr: # instruction language
+  en: # start language, ie. en-hr
+    - "PREVEDI:ENGLESKI: {input} HRVATSKI: {output}"
+  hr: # start language, ie. hr-en
     - "PREVEDI:HRVATSKI: {input} ENGLESKI: {output}"
