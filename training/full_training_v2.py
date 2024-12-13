@@ -1,5 +1,6 @@
 ''' training in torch, basically a more structured version of DPmultiGPU.py code '''
 
+from typing import Dict
 import os
 import sys
 from datetime import datetime
@@ -43,6 +44,30 @@ def get_parser():
                         choices=['training'],
                         required=False,
                         type=str)
+    parser.add_argument("--model_id",
+                        help="HF model name or model path.",
+                        required=False,
+                        type=str)
+    parser.add_argument("--dataset_label",
+                        help="The label of the dataset.",
+                        required=False,
+                        type=str)
+    parser.add_argument("--gradient_accumulation_steps",
+                        help="Set the batch size.",
+                        required=False,
+                        type=int)
+    parser.add_argument("--per_device_train_batch_size",
+                        help="Set the batch size.",
+                        required=False,
+                        type=int)
+    parser.add_argument("--per_device_eval_batch_size",
+                        help="Set the batch size.",
+                        required=False,
+                        type=int)
+    parser.add_argument("--max_seq_length",
+                        help="Set the maximal context length.",
+                        required=False,
+                        type=int)
     return parser
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
@@ -144,10 +169,11 @@ def compute_perplexity_metric(eval_pred):
     print(f"Perplexity: {perplexity}")
     return {"perplexity": perplexity}
 
-def setup_and_run_training(params):
+def setup_and_run_training(params: Dict):
     model_id = params['model_id']
     if 'gemma' in model_id.lower(): config_utils.huggingface_login()
-    tokenizer_wrapper = TokenizerWrapper(model_id)
+    if 'max_seq_length' not in params.keys(): params['max_seq_length'] = 512 # Set default, TODO: Remove
+    tokenizer_wrapper = TokenizerWrapper(model_id, max_seq_length=params['max_seq_length'])
     dataset = dataset_loader(params['dataset_label'])
     if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
         train_dataset = dataset['train']
