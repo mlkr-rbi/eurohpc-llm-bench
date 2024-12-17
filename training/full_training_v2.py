@@ -1,5 +1,5 @@
 ''' training in torch, basically a more structured version of DPmultiGPU.py code '''
-
+import copy
 from typing import Dict
 import os
 import sys
@@ -10,6 +10,7 @@ import numpy as np
 from pyarrow import set_timezone_db_path
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_text_v1, get_test_cro_dataset
+from data_tools.dataset_utils import discard_columns
 from utils import config_utils
 
 import argparse
@@ -27,7 +28,7 @@ from transformers import (
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling
 )
-from datasets import load_dataset, Dataset, DatasetDict
+from datasets import load_dataset, Dataset, DatasetDict, load_from_disk
 
 
 def get_parser():
@@ -88,6 +89,7 @@ class TokenizerWrapper():
         tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "right"
+        tokenizer.model_max_length=max_seq_length
         self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
 
@@ -146,14 +148,18 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
         model.print_trainable_parameters()
     return model
 
-def dataset_loader(label:str) -> DatasetDict:
+def dataset_loader(label_or_path:str) -> DatasetDict:
     '''
     Load a dataset for training.
+    :param label_or_path: either a known label (with a factory method), or a valid path to a hf dataset
     :return: hf dataset containing train and validation splits
     '''
-    if label == 'macocu_v1': return get_macocu_text_v1()
-    elif label == 'test_cro': return get_test_cro_dataset()
-    else: raise ValueError(f"Unknown dataset label: {label}")
+    if label_or_path == 'macocu_v1': return get_macocu_text_v1()
+    elif label_or_path == 'test_cro': return get_test_cro_dataset()
+    elif os.path.exists(label_or_path):
+        return load_from_disk(label_or_path)
+    else:
+        raise ValueError(f"Dataset argument must be either know label or existing hf dataset path: {label_or_path}")
 
 def compute_perplexity_metric(eval_pred):
     print("Computing perplexity...")
@@ -176,12 +182,12 @@ def setup_and_run_training(params: Dict):
     tokenizer_wrapper = TokenizerWrapper(model_id, max_seq_length=params['max_seq_length'])
     dataset = dataset_loader(params['dataset_label'])
     if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
-        train_dataset = dataset['train']
-        val_dataset = dataset['validation']
+        train_dataset = discard_columns(dataset['train'])
+        val_dataset = discard_columns(dataset['validation'])
         print(f"Training dataset size: {len(train_dataset)}")
         print(f"Validation dataset size: {len(val_dataset)}")
     else: # single dataset
-        train_dataset = dataset
+        train_dataset = discard_columns(dataset)
         val_dataset = None
         print(f"Training dataset size: {len(train_dataset)}")
     tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
