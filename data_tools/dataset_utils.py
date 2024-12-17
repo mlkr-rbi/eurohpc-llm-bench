@@ -79,6 +79,10 @@ def pairs_to_instructions(dataset, pc: TranslationPromptComposer, rnd_seed=1337)
     result = result.shuffle(seed=rnd_seed)
     return result
 
+def discard_columns(dataset: Dataset, column_to_keep: str = 'text') -> Dataset:
+    dataset = dataset.remove_columns([col for col in dataset.column_names if col != column_to_keep])
+    return dataset
+
 def print_dset_sample(dataset: Dataset, title:str = 'dataset', sample_size=10, rnd_seed=9123):
     '''
     Prints a sample of a dataset.
