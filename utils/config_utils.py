@@ -122,8 +122,11 @@ def get_models_dir() -> Path:
 def get_model_path(model_path: str) -> Path:
     """Get default directory to store custom models."""
     parent_paths = [get_cwd(), get_app_root_path(), get_models_dir()]
-    return handle_abs_relative_path(model_path, parent_paths)
-
+    result = handle_abs_relative_path(model_path, parent_paths)
+    # fallback to model_path if the resolved path does not exist
+    # This way, huggingface model and tokenizer ID will be returned as they are, so they can be used in the config
+    if result.exists(): return result
+    else: return model_path
 
 def get_datasets_dir() -> Path:
     """Get default directory to store custom datasets."""
