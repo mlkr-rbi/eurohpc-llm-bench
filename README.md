@@ -50,3 +50,15 @@ Gemma2-challenge for kaggle competition
 - more info can be found on MareNostrum machine, in the project root folder: 
 - - /gpfs/projects/ehpc124/ , especially in the README.md file and the scripts folder
 - - you can create ~/bin folder and put your custom util scripts there, it is added to PATH automatically
+
+# DEEPSPEED SETUP
+- full_training_v3.py is a version of full_training_v2.py that uses deepspeed
+- deepspeed .json config file in the experiments/ folder need to be specified via cmdline parameter,
+for example: `python main.py --experiment mt-train-local-test.yml --deepspeed deepspeed_test.json`
+if not specified, deepspeed will not be used.
+- Installing deepspeed: it depends on MPI and mpy4py
+  - if MPI is not installed, install it with `sudo apt install mpich libmpich-dev`
+  - install mpy4py with
+    - export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu (or similar, because otherwise compilation will "fail to link") 
+    - `pip install mpi4py`
+  - do `pip install deepspeed`

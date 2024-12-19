@@ -76,7 +76,7 @@ def get_absolute_path(path: str) -> Path:
 
 def get_path_with_suffix(path: Union[str, Path], suffix: str=".yml") -> Union[str, Path]:
     """Get path with added suffix."""
-    if isinstance(path, str) and not path.endswith(".yml"):
+    if isinstance(path, str) and not path.endswith(suffix):
         path = path + suffix
     if isinstance(path, Path):
         path = path.with_suffix(suffix)
@@ -87,6 +87,9 @@ def get_config(path: Union[Path, str]) -> Any:
     """Get configuration from YAML file."""
     return yaml.safe_load(open(path))
 
+def get_json_config(path: Union[Path, str]) -> Any:
+    """Get configuration from JSON file."""
+    return json.load(open(path))
 
 def save_config(config_data: Any, file_path: Union[Path, str]):
     """Save configuration to YAML file."""
@@ -349,6 +352,12 @@ def get_experiment(experiment_name_or_path: str) -> Dict:
     path = get_path_with_suffix(experiment_name_or_path, ".yml")
     parent_paths = [get_cwd(), get_app_root_path(), get_experiments_dir()]
     return get_config(handle_abs_relative_path(path, parent_paths))
+
+def get_deepspeed_config(experiment_name_or_path: str) -> Dict:
+    """Get experiment configuration."""
+    path = get_path_with_suffix(experiment_name_or_path, ".json")
+    parent_paths = [get_cwd(), get_app_root_path(), get_experiments_dir()]
+    return get_json_config(handle_abs_relative_path(path, parent_paths))
 
 
 def get_default_experiment(action: str=None) -> Dict:

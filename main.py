@@ -1,10 +1,10 @@
 import argparse
 from evaluation import evaluation
-from training import full_training_v2
+from training import full_training_v2, full_training_v3
 from utils import config_utils
 
 ACTIONS = {
-    'training': full_training_v2,
+    'training': full_training_v3,
     'evaluation': evaluation,
 }
 
