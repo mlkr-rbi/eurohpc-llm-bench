@@ -1,7 +1,7 @@
 # gemma2-challenge
 Gemma2-challenge for kaggle competition
 
-# environment setup
+# environment setup, for a machine with internet access (not a HPC cluster)
 - run "generate_requirements.sh" to generate requirements.txt automatically, by scanning the code
 - optionally, first edit generate_requirements.sh to add more packages 'by hand'
 - run "pip install -r requirements.txt" to install all the required packages
@@ -42,3 +42,11 @@ Gemma2-challenge for kaggle competition
 ### evaluation
 - `python main.py --experiment mt-eval-2b-it-v000.yml`
 - `CUDA_VISIBLE_DEVICES=0,1 python main.py --experiment experiments/mt-eval-2b-peft-3epochs_lr2e-4-2024-12-01-v000.yml --max_examples 10`
+
+# HPC setup
+- hpc_tech folder contains scripts and instructions for setting up and running the code on the HPC cluster
+- scripts here are not refactored and generalized yet, but are ad hoc tools
+- for now only some util scripts, more elaborate instructions to come
+- more info can be found on MareNostrum machine, in the project root folder: 
+- - /gpfs/projects/ehpc124/ , especially in the README.md file and the scripts folder
+- - you can create ~/bin folder and put your custom util scripts there, it is added to PATH automatically
