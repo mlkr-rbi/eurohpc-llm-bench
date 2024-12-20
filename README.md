@@ -53,10 +53,12 @@ Gemma2-challenge for kaggle competition
 
 # DEEPSPEED SETUP
 - full_training_v3.py is a version of full_training_v2.py that uses deepspeed
-- deepspeed .json config file in the experiments/ folder need to be specified via cmdline parameter,
-for example: `python main.py --experiment mt-train-local-test.yml --deepspeed deepspeed_test.json`
-if not specified, deepspeed will not be used.
-- Installing deepspeed: it depends on MPI and mpy4py
+- to use deepspeed, a 'deepspeed' parameter needs to be present, defined either on cmdline 
+- - the value of the parameter is either a path (same convention as for .yml settings), or a json string 
+- - for example: `python main.py --experiment mt-train-local-test.yml --deepspeed deepspeed_test.json`
+- - YAML example is in experiments/mt-train-local-test-deepspeed.yml
+- Installing deepspeed locally: it depends on MPI and mpy4py
+  - the following works on ubuntu 24.04
   - if MPI is not installed, install it with `sudo apt install mpich libmpich-dev`
   - install mpy4py with
     - export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu (or similar, because otherwise compilation will "fail to link") 

@@ -353,9 +353,16 @@ def get_experiment(experiment_name_or_path: str) -> Dict:
     parent_paths = [get_cwd(), get_app_root_path(), get_experiments_dir()]
     return get_config(handle_abs_relative_path(path, parent_paths))
 
-def get_deepspeed_config(experiment_name_or_path: str) -> Dict:
-    """Get experiment configuration."""
-    path = get_path_with_suffix(experiment_name_or_path, ".json")
+def get_deepspeed_config(json_settings: str) -> Dict:
+    """
+        Get experiment configuration as parsed .json.
+        :param json_settings: either a (partial) path to a .json file, or a name of the .json file
+            in the experiments/ directory, or a string containing the json configuration.
+    """
+    # check if the experiment_name_or_path is a json string
+    json_settings = json_settings.strip()
+    if json_settings.startswith("{"): return json.loads(json_settings)
+    path = get_path_with_suffix(json_settings, ".json")
     parent_paths = [get_cwd(), get_app_root_path(), get_experiments_dir()]
     return get_json_config(handle_abs_relative_path(path, parent_paths))
 
