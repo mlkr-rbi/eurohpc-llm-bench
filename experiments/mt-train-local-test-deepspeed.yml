@@ -27,7 +27,7 @@ ddp_find_unused_parameters: False
 gradient_checkpointing: True
 # DEEPSPEED
 # put .json block here, it has to be indented, and '|' means take the block as literal string
-# these settings need to be synced with the above parameter that initialize TrainingArguments
+# these settings need to be synced with the other training and quantization parameters
 deepspeed: |
   {
     "zero_optimization": {
