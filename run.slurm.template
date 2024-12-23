@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# copy to run.slurm, edit the parameters if required,
+# and run: sbatch run.slurmr
+
+# SLURM job directives
+## account-related setup
+#SBATCH --account=ehpc124              # Project account
+#SBATCH --partition=EuroHPC            # max. nodes (cores), wallclock: 100 (8000),	72h
+#SBATCH --qos=acc_ehpc                 # Quality of Service (QoS) level
+## task-related setup
+#SBATCH --job-name=my_job_name         # Name of the job
+#SBATCH --output=output.%j.log         # Standard output file (with job ID)
+#SBATCH --error=error.%j.log           # Standard error file (with job ID)
+#SBATCH --nodes=4                      # Number of nodes required
+#SBATCH --ntasks-per-node=4            # Number of tasks per node
+#SBATCH --cpus-per-task=16             # Number of CPUs per task
+#SBATCH --gres=gpu:4                   # Number of GPUs per node
+#SBATCH --time=00:15:00                # Maximum runtime (HH:MM:SS)
+#SBATCH --mail-type=none               # {begin|end|all|none}
+#SBATCH --mail-user=user@example.com   # Email for notifications
+
+ROOT_DIR="/gpfs/projects/ehpc124"
+
+# Load required modules
+module purge
+module load bsc
+source $ROOT_DIR/project/scripts/support-scripts/load-modules-py311-5.sh
+
+# Set environment variables if needed
+## for deepspeed
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+export MASTER_PORT=$(( RANDOM % 10000 + 30000 ))  # Random port between 30000-39999
+
+# read the experiment file fom the command line
+EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
+
+# run the job
+# Your commands or executable script go here
+srun python main.py --experiment $EXPERIMENT_FILE
