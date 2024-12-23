@@ -28,6 +28,7 @@ ssh $SSH_HOST "rm -rf $DEPLOY_FOLDER/$PROJECT"
 echo 'Copying local project to remote machine...'
 #scp -r $CODE_FOLDER/$PROJECT $SSH_HOST:$DEPLOY_FOLDER
 # do rsync instead of scp to avoid copying .git folder
+# TODO exclude settings.py also, and maybe other local files
 rsync -av --exclude '.git' $CODE_FOLDER/$PROJECT $SSH_HOST:$DEPLOY_FOLDER
 
 # create link-folders 'models', 'outputs', 'datasets' in the copied project
@@ -37,3 +38,8 @@ for x in models outputs datasets; do
     echo "Creating link to $x..."
     ssh $SSH_HOST "ln -s $ROOT_DIR/$x $DEPLOY_FOLDER/$PROJECT/$x"
 done
+
+echo 'initializing settings.py with a copy of settings.template.py...'
+ssh $SSH_HOST "rm $DEPLOY_FOLDER/$PROJECT/settings.py"
+ssh $SSH_HOST "cp $DEPLOY_FOLDER/$PROJECT/settings.template.py $DEPLOY_FOLDER/$PROJECT/settings.py"
+# TODO do this only if settings.py does not exist
