@@ -4,7 +4,7 @@ pip install pipreqs
 pipreqs . --mode no-pin --savepath requirements.txt # remove no-pin to include the version numbers
 
 # add additional "hidden" dependencies that pipreqs does not catch
-deps="langchain-huggingface bitsandbytes tensorboard nltk rouge-score" # packages, space delimited
+deps="deepspeed langchain-huggingface bitsandbytes tensorboard nltk rouge-score" # packages, space delimited
 
 for dep in $deps
 do

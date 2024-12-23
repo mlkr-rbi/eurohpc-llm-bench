@@ -13,9 +13,9 @@ torch
 tqdm
 datasets
 transformers
+deepspeed
 langchain-huggingface
 bitsandbytes
 tensorboard
 nltk
 rouge-score
-# tf-keras
