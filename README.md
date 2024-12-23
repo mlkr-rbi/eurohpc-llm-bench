@@ -64,3 +64,24 @@ Gemma2-challenge for kaggle competition
     - export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu (or similar, because otherwise compilation will "fail to link") 
     - `pip install mpi4py`
   - do `pip install deepspeed`
+- Installing deepspeed on marenostrum
+- - from scratch: same as with the base environment, once folder with packages is created
+- - into the existing environment, based on a folder with new packages added locally:
+first activate the environment: module loads' and maybe venv ...
+"pip install --user -v --ignore-installed --no-index --no-build-isolation --find-links=./py311-deepspeed mpi4py deepspeed"
+
+# DEEPSPEED RUN - ON MARENOSTRUM
+- create the project folder with the code, either by copying the 'official' repo 
+via script, or using hpc_tech/mn_push_repo.sh script to create a custom location
+- setup the environment: edit settings.py, and if necesary, the .yml file in the experiments/
+folder, if for the wiki dataset the 'dataset_label' property needs to point to the 
+full path of the dataset (no loader method yet)
+- copy run.slurm.template to run.slurm and customize:
+- - the resources requested (nodes, gpu, time)
+- - the script to load the modules 
+- - the experiment file that will be used
+- run the slurm batch job:
+- - sbatch run.slurm
+- - squeue gives job status
+- - slurm/*.txt files contain std. error and output redirects (the location can be
+configured in run.slurm)
