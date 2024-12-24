@@ -13,6 +13,7 @@ torch
 tqdm
 datasets
 transformers
+nvidia-ml-py
 mpi4py
 deepspeed
 langchain-huggingface
