@@ -4,21 +4,21 @@ import os
 current_module_path = os.path.abspath(os.path.dirname(__file__))
 
 ### Change username with your name please - so we all know who produce these models
-MODEL_TRAINING_OUTPUT = 'datasets/username'
+MODEL_TRAINING_OUTPUT = 'models/username'
 
 HUGGINGFACE_TOKEN = ''
 
 # tab-separated .txt file with parallel en-hr sentences
 MACOCU_SENTENCES_FILE = 'datasets/MaCoCu-hr-en.sent.txt'
 MACOCU_SENTENCES_FILE_SMALL = 'datasets/MaCoCu-hr-en.sent.1000.txt' # for development purposes
-MACOCU_SENT_ORIG_HF = '/data/datasets/corpora/classla/parallel/hr-en-macocu-cc/macocu_sent_hf_dataset/' # full original macocu, in the HF dataset format
+MACOCU_SENT_ORIG_HF = 'datasets/corpora/classla/parallel/hr-en-macocu-cc/macocu_sent_hf_dataset/' # full original macocu, in the HF dataset format
 
 ### Don't use MACOCU_DATASET_V1 - it is deprecated and will be removed!!!
 MACOCU_DATASET_V1 = '' # pre-processed dataset, in huggingface dataset format, ready to use
 
 
 DATASETS_DIR = "datasets" # Set relative path to store all datasets
-MODELS_DIR = "models/google" # Set relative path to store all models
+MODELS_DIR = "models" # Set relative path to store all models
 OUTPUTS_DIR = "outputs" # Set relative path to store outputs
 PROMPTS_DIR = "prompts" # Set relative path to prompt configuration files 
 EXPERIMENTS_DIR = "experiments" # Set relative path to experiments configuration files 

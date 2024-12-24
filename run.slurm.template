@@ -10,8 +10,8 @@
 #SBATCH --qos=acc_ehpc                 # Quality of Service (QoS) level
 ## task-related setup
 #SBATCH --job-name=my_job_name         # Name of the job
-#SBATCH --output=output.%j.log         # Standard output file (with job ID)
-#SBATCH --error=error.%j.log           # Standard error file (with job ID)
+#SBATCH --output=slurm/output.%j.log   # Standard output file (with job ID)
+#SBATCH --error=slurm/error.%j.log     # Standard error file (with job ID)
 #SBATCH --nodes=4                      # Number of nodes required
 #SBATCH --ntasks-per-node=4            # Number of tasks per node
 #SBATCH --cpus-per-task=16             # Number of CPUs per task
@@ -25,7 +25,7 @@ ROOT_DIR="/gpfs/projects/ehpc124"
 # Load required modules
 module purge
 module load bsc
-source $ROOT_DIR/project/scripts/support-scripts/load-modules-py311-5.sh
+source $ROOT_DIR/scripts/support-scripts/load-modules-py311-5.sh
 
 # Set environment variables if needed
 ## for deepspeed

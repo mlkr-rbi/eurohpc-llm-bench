@@ -1,7 +1,7 @@
 # test setting for full-parameter training of GEMMA-2-2b on Croatian Wikipedia
 
 action: training # Start training action
-model_id: "gemma-2-2b"
+model_id: "google/gemma-2-2b"
 model_label: "gemma-2-2b"
 dataset_label: "path_to_wikipedia_dataset"
 output_dir_tag: "model_gemma-2-2b"

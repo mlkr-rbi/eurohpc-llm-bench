@@ -128,7 +128,7 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
         model = AutoModelForCausalLM.from_pretrained(
             config_utils.get_model_path(model_id),
             quantization_config=bnb_config,
-            device_map="auto",
+            device_map="none",
             trust_remote_code=True
         )
         model.gradient_checkpointing_enable()
@@ -136,7 +136,7 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
     else:
         model = AutoModelForCausalLM.from_pretrained(
             config_utils.get_model_path(model_id),
-            device_map="auto",
+            device_map="none",
             trust_remote_code=True
         )
         model.gradient_checkpointing_enable()

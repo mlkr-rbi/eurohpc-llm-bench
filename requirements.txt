@@ -13,6 +13,7 @@ torch
 tqdm
 datasets
 transformers
+tf-keras
 nvidia-ml-py
 mpi4py
 deepspeed
