@@ -244,6 +244,8 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         local_rank=-1,
         deepspeed=deepspeed_config
     )
+    # TODO: Debug - model and datasets are not on the same device
+    # RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
     trainer = Trainer(
         model=model,
         args=training_args,
