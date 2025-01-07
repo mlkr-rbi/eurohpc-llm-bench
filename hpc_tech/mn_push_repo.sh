@@ -24,12 +24,10 @@ fi
 # delete remote project in the deploy folder, if exists
 echo 'Deleting remote project...'
 ssh $SSH_HOST "rm -rf $DEPLOY_FOLDER/$PROJECT"
-# copy local project to remote machine
+
 echo 'Copying local project to remote machine...'
-#scp -r $CODE_FOLDER/$PROJECT $SSH_HOST:$DEPLOY_FOLDER
-# do rsync instead of scp to avoid copying .git folder
-# TODO exclude settings.py also, and maybe other local files
-rsync -av --exclude '.git' $CODE_FOLDER/$PROJECT $SSH_HOST:$DEPLOY_FOLDER
+# do copy; add files and folders to the exclude list as needed
+rsync -av --exclude={'**/.git','**/training_output'} $CODE_FOLDER/$PROJECT $SSH_HOST:$DEPLOY_FOLDER
 
 # create link-folders 'models', 'outputs', 'datasets' in the copied project
 ROOT_DIR="/gpfs/projects/ehpc124"
@@ -42,4 +40,3 @@ done
 echo 'initializing settings.py with a copy of settings.template.py...'
 ssh $SSH_HOST "rm $DEPLOY_FOLDER/$PROJECT/settings.py"
 ssh $SSH_HOST "cp $DEPLOY_FOLDER/$PROJECT/settings.template.py $DEPLOY_FOLDER/$PROJECT/settings.py"
-# TODO do this only if settings.py does not exist
