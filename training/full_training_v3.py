@@ -260,7 +260,7 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
             trainer.train(resume_from_checkpoint=resume)
             print("Training finished.")
             break
-        except ValueError as e:
+        except (ValueError, FileNotFoundError) as e:
             msg = str(e)
             if "no valid checkpoint found" in msg.lower():
                 print("No valid checkpoint found, training from scratch.")
