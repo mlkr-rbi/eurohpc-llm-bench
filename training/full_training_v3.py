@@ -104,7 +104,8 @@ class TokenizerWrapper():
             padding="max_length",
             truncation=True,
             max_length=self.max_seq_length,
-            return_tensors=None
+            return_tensors=None,
+            device="cuda"
         )
         encoding["labels"] = encoding["input_ids"].copy()
         return encoding
@@ -242,10 +243,12 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         ddp_find_unused_parameters=params['ddp_find_unused_parameters'],
         gradient_checkpointing=params['gradient_checkpointing'],
         local_rank=-1,
-        deepspeed=deepspeed_config
+        deepspeed=deepspeed_config,
+        dataloader_pin_memory=False,
     )
     # TODO: Debug - model and datasets are not on the same device
     # RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
+    model = model.to(training_args.device)
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -253,6 +256,7 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         eval_dataset=val_dataset,
         data_collator=data_collator,
         compute_metrics=compute_perplexity_metric,
+        dataset_loader=None,
     )
     resume = True
     while True:
