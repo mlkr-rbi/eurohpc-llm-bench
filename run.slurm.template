@@ -43,7 +43,8 @@ export MASTER_PORT=$(( RANDOM % 10000 + 30000 ))  # Random port between 30000-39
 
 # read the experiment file fom the command line
 EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
+DEEPSPEED_CONFIG="experiments/deepspeed/deepspeed_test.json"
 
 # run the job
 # Your commands or executable script go here
-srun deepspeed main.py --deepspeed "experiments/deepspeed/deepspeed_test.json" --experiment $EXPERIMENT_FILE
+srun deepspeed main.py --deepspeed $DEEPSPEED_CONFIG --experiment $EXPERIMENT_FILE
