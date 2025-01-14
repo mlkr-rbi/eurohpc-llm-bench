@@ -1,24 +1,33 @@
 #!/bin/bash
 
 # copy to run.slurm, edit the parameters if required,
-# and run: sbatch run.slurmr
+# and run: sbatch run.slurm
 
 # SLURM job directives
 ## account-related setup
 #SBATCH --account=ehpc124              # Project account
 #SBATCH --partition=EuroHPC            # max. nodes (cores), wallclock: 100 (8000),	72h
 #SBATCH --qos=acc_ehpc                 # Quality of Service (QoS) level
-## task-related setup
+## acc_ehpc is the "queue" we need to use, its params are here:
+## https://www.bsc.es/supportkc/docs/MareNostrum5/slurm/#queues-qos
+
+## fixed params
 #SBATCH --job-name=my_job_name         # Name of the job
 #SBATCH --output=slurm/output.%j.log   # Standard output file (with job ID)
 #SBATCH --error=slurm/error.%j.log     # Standard error file (with job ID)
-#SBATCH --nodes=4                      # Number of nodes required
-#SBATCH --ntasks-per-node=4            # Number of tasks per node
-#SBATCH --cpus-per-task=16             # Number of CPUs per task
-#SBATCH --gres=gpu:4                   # Number of GPUs per node
-#SBATCH --time=00:15:00                # Maximum runtime (HH:MM:SS)
 #SBATCH --mail-type=none               # {begin|end|all|none}
 #SBATCH --mail-user=user@example.com   # Email for notifications
+## ntasks needs to be 1 for deepspeed: https://huggingface.co/docs/transformers/deepspeed
+#SBATCH --ntasks-per-node=1            # Number of tasks per node
+
+## resources, below is the test setup, change as needed for production
+## effective batch size is nodes * gpus * batch_per_gpu (huggingface param)
+#SBATCH --nodes=2                     # Number of nodes required
+#SBATCH --cpus-per-task=16             # Number of CPUs per task
+#SBATCH --gres=gpu:4                   # Number of GPUs per node, max. 4 for marenostrum5
+## max. 72hrs for acc_ehpc
+#SBATCH --time=00:15:00                # Maximum runtime (HH:MM:SS)
+
 
 ROOT_DIR="/gpfs/projects/ehpc124"
 
@@ -37,4 +46,4 @@ EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
 
 # run the job
 # Your commands or executable script go here
-srun python main.py --experiment $EXPERIMENT_FILE
+srun deepspeed main.py --deepspeed "experiments/deepspeed/deepspeed_test.json" --experiment $EXPERIMENT_FILE
