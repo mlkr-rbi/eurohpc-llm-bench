@@ -30,7 +30,7 @@ def main():
     _kwargs = config_utils.get_experiment_arguments(**kwargs)
     action = _kwargs['action'].lower()
     if action in ACTIONS:
-        kwargs = vars(ACTIONS[action].get_parser().parse_args())
+        kwargs = vars(ACTIONS[action].get_parser().parse_known_args()[0])
         ACTIONS[action].main(**kwargs)
 
 
