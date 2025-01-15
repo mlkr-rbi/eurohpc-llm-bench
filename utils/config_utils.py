@@ -409,6 +409,76 @@ def get_experiment_arguments(action: str=None, **kwargs) -> Dict[str, Any]:
     return exp_config
 
 
+
+# TODO: Finish prompt configuration generator
+from enum import Enum
+def prompt_config_creator(name='test'):
+    class en_lang(Enum):
+        N = "engleski"
+        G = "engleskog"
+        D = "engleskom"
+        A = "engleski"
+        V = "engleski"
+        I = "engleskim"
+        L = "engleskom"
+        
+    class hr_lang(Enum):
+        N = "hrvatski"
+        G = "hrvatskog"
+        D = "hrvatskom"
+        A = "hrvatski"
+        V = "hrvatski"
+        I = "hrvatskim"
+        L = "hrvatskom"
+        
+    lang_versions = {
+        'en': {
+            'en': "English",
+            'hr': en_lang,
+        },
+        'hr': {
+            'en': "Croatian",
+            'hr': hr_lang,
+        }
+    }
+    
+    instructions = {
+        'en': [
+            "Translate following text from {lang1} to {lang2}.\n{lang1}:\n{text1}\n\n{lang2}:\n{text2}",
+            # "Translate text from {lang1} to {lang2} as shorter as possible.\n{lang1}:\n{text1}\n\n{lang2}:\n{text2}",
+            "Translate text.\n{lang1}:\n{text1}\n\n{lang2}:\n{text2}",
+            "Translate.\n{lang1}:\n{text1}\n\n{lang2}:\n{text2}",
+        ],
+        'hr': [
+            "Prevedi text u nastavku s {lang1.D} na {lang2.A}.\n{lang1.N}:\n{text1}\n\n{lang2.N}:\n{text2}",
+            "Prevedi text.\n{lang1.N}:\n{text1}\n\n{lang2.N}:\n{text2}",
+            "Prevedi.\n{lang1.N}:\n{text1}\n\n{lang2.N}:\n{text2}",
+        ]
+    }
+    
+    output = {}
+    for instruction_lang in ['en', 'hr']:
+        output[instruction_lang] = {}
+        for input_lang in ['en', 'hr']:
+            output[instruction_lang][input_lang] = []
+            for output_lang in ['en', 'hr']:
+                if input_lang == output_lang: continue
+                for instruction in instructions[instruction_lang]:
+                    ins = instruction.format(
+                        lang1=lang_versions[input_lang][instruction_lang],
+                        lang2=lang_versions[output_lang][instruction_lang],
+                        text1="{input}",
+                        text2="{output}",
+                    )
+                    output[instruction_lang][input_lang].append(ins)
+    return output
+
+prompt_config_creator()     
+
+
+
+
+
 if __name__=="__main__":
     # Test utils functions
     print("get_experiments_dir:    ", get_experiments_dir())
