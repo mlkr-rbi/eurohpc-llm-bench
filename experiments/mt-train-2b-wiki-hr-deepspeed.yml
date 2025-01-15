@@ -25,26 +25,7 @@ bf16: True
 remove_unused_columns: False
 ddp_find_unused_parameters: False
 gradient_checkpointing: True
-# DEEPSPEED
-# put .json block here, it has to be indented, and '|' means take the block as literal string
-# these settings need to be synced with the other training and quantization parameters
-deepspeed: |
-  {
-    "zero_optimization": {
-      "stage": 2,
-      "overlap_comm": true,
-      "contiguous_gradients": true
-    },
-    "fp16": {
-      "enabled": false
-    },
-    "bf16": {
-      "enabled": true
-    },
-    "train_batch_size": "auto",
-    "train_micro_batch_size_per_gpu": 2,
-    "gradient_accumulation_steps": "auto"
-  }
+
 # QUANTIZATION AND PEFT
 quantize:
   enabled: False
