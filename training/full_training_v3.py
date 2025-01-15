@@ -1,5 +1,6 @@
 ''' training in torch, basically a more structured version of DPmultiGPU.py code '''
 import copy
+from pprint import pprint
 from typing import Dict
 import os
 import sys
@@ -104,8 +105,7 @@ class TokenizerWrapper():
             padding="max_length",
             truncation=True,
             max_length=self.max_seq_length,
-            return_tensors=None,
-            device="cuda"
+            return_tensors=None
         )
         encoding["labels"] = encoding["input_ids"].copy()
         return encoding
@@ -181,7 +181,16 @@ def compute_perplexity_metric(eval_pred):
     print(f"Perplexity: {perplexity}")
     return {"perplexity": perplexity}
 
+def set_default_device(params: Dict):
+    ''' Set default torch device from params if defined, else use cuda if available, or cpu. '''
+    if 'device' in params: device = params['device']
+    else: device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if device.startswith('cuda') and not torch.cuda.is_available():
+        raise ValueError("CUDA device not available.")
+    torch.set_default_device('cuda')
+
 def setup_and_run_training(params: Dict):
+    set_default_device(params)
     model_id = params['model_id']
     # todo add hf login as a parameter; until then, uncomment first time when using, to download the model
     #if 'gemma' in model_id.lower(): config_utils.huggingface_login()
@@ -246,9 +255,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         deepspeed=deepspeed_config,
         dataloader_pin_memory=False,
     )
-    # TODO: Debug - model and datasets are not on the same device
-    # RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
-    model = model.to(training_args.device)
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -256,7 +262,6 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         eval_dataset=val_dataset,
         data_collator=data_collator,
         compute_metrics=compute_perplexity_metric,
-        dataset_loader=None,
     )
     resume = True
     while True:
