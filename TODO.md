@@ -2,9 +2,6 @@
 
 # TODO: Evaluation
 
-# TODO: debugging the code until a model is trained in a deepspeed 'regime'
-- deploy new deepspeed training setup from the repo to mare nostrum, and test for correctness
-
 # TODO: scripts for precise monitoring of resource usage (memory, cpu, gpu) accross nodes, for a specifed job
 - check deepspeed logging functionality 
 - check slurm logging functionality
