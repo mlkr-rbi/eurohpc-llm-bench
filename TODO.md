@@ -1,32 +1,31 @@
 # Main tech-related TODO LIST
 
 # TODO: Evaluation
-- evaluate new model on YugoGPT evaluations
 
 # TODO: debugging the code until a model is trained in a deepspeed 'regime'
-- a priority over next step
-- install deepspeed and mpi4py first in your env: see readme or below
-- solve the 'device_map' task, or just edit local files on the server, or fix to None in github as default
-- this is an iterative process, the training is run using 
-sbatch run.slurm (see run.slurm.template)
-- output of the process is in slurm error and output files (see template) 
-- it seems that the only thing left is to configure deepspeed and hf/torch params properly
+- deploy new deepspeed training setup from the repo to mare nostrum, and test for correctness
 
 # TODO: scripts for precise monitoring of resource usage (memory, cpu, gpu) accross nodes, for a specifed job
-- there should be slurm facilities to do this
+- check deepspeed logging functionality 
+- check slurm logging functionality
 
 # TODO: Logging
 - check aggregation of logs (validation scores) - is it done per node or after gradient aggregation?
-- errors
-- model versions and checkpoint (train and valid scores)
+- create a solution (iteratively) for logging that encompasses: 
+- - erorrs
+- - custom log messages
+- - deepspeed metrics and training params
+- - resources, primarily GPU usage
 
 # TODO: Environment
 - Setup all on Leonardo
 
 # TODO: Define final task
 
-# TODO: Evaluation
-- add custom eval in train 
+# TODO: Training and In-train Evaluation
+- loss evaluation on eval_dataset
+- custom metrics eval on eval_dataset
+- saving of the final (last, best, ...) model version, together with the tokenizer
 
 # environment setup
 - current deepspeed environment was created ad-hoc
