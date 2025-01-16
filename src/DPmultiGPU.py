@@ -135,9 +135,7 @@ training_args = TrainingArguments(
     lr_scheduler_type="cosine",
     prediction_loss_only=True,
     remove_unused_columns=False,
-    ddp_find_unused_parameters=False,
     gradient_checkpointing=True,
-    local_rank=-1
 )
 
 # Initialize trainer

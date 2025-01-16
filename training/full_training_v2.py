@@ -227,9 +227,7 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params):
         fp16=params['fp16'],
         bf16=params['bf16'],
         remove_unused_columns=params['remove_unused_columns'],
-        ddp_find_unused_parameters=params['ddp_find_unused_parameters'],
-        gradient_checkpointing=params['gradient_checkpointing'],
-        local_rank=-1
+        gradient_checkpointing=params['gradient_checkpointing']
     )
     trainer = Trainer(
         model=model,

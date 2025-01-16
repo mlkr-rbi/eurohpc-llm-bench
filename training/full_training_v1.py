@@ -175,9 +175,7 @@ def do_training(model, tokenizer, train_dataset, val_dataset, model_label, produ
         fp16=False,
         bf16=True,
         remove_unused_columns=False,
-        ddp_find_unused_parameters=False,
         gradient_checkpointing=True,
-        local_rank=-1
     )
     trainer = Trainer(
         model=model,
