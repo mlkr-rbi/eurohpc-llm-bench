@@ -1,6 +1,7 @@
 # test for running on local (weak) machines - setup with a small transformer
 
 action: training # Start training action
+device: "cuda"
 model_id: "HuggingFaceTB/SmolLM-135M"
 model_label: "SmolLM-135M"
 dataset_label: "/data/datasets/corpora/classla/balkan-wikis/classla_hr_wiki_huggingface_docs_sample/"

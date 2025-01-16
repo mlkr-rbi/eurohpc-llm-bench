@@ -190,7 +190,8 @@ def set_default_device(params: Dict):
     torch.set_default_device('cuda')
 
 def setup_and_run_training(params: Dict):
-    set_default_device(params)
+    # 'device' param can break deepspeed run, so best to add it if needed for a particular machine
+    if 'device' in params: set_default_device(params)
     model_id = params['model_id']
     # todo add hf login as a parameter; until then, uncomment first time when using, to download the model
     #if 'gemma' in model_id.lower(): config_utils.huggingface_login()
