@@ -41,10 +41,9 @@ source $ROOT_DIR/scripts/support-scripts/load-modules-py311-5.sh
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=$(( RANDOM % 10000 + 30000 ))  # Random port between 30000-39999
 
-# read the experiment file fom the command line
+# experiment (learning etc.), and deepspeed configuration files
 EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
 DEEPSPEED_CONFIG="experiments/deepspeed/deepspeed_test.json"
 
 # run the job
-# Your commands or executable script go here
 srun deepspeed main.py --deepspeed $DEEPSPEED_CONFIG --experiment $EXPERIMENT_FILE

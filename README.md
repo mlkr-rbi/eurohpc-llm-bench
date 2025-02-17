@@ -70,18 +70,18 @@ Gemma2-challenge for kaggle competition
 first activate the environment: module loads' and maybe venv ...
 "pip install --user -v --ignore-installed --no-index --no-build-isolation --find-links=./py311-deepspeed mpi4py deepspeed"
 
-# DEEPSPEED RUN - ON MARENOSTRUM
+# DEEPSPEED RUN
 - create the project folder with the code, either by copying the 'official' repo 
 via script, or using hpc_tech/mn_push_repo.sh script to create a custom location
 - setup the environment: edit settings.py, and if necesary, the .yml file in the experiments/
 folder, if for the wiki dataset the 'dataset_label' property needs to point to the 
 full path of the dataset (no loader method yet)
-- copy run.slurm.template to run.slurm and customize:
+- copy run.slurm.MACHINE_ID.template to run.slurm and customize, if needed:
 - - the resources requested (nodes, gpu, time)
-- - the script to load the modules 
+- - the code that sets up the environment (module loads, ...) 
 - - the experiment file that will be used
 - run the slurm batch job:
 - - sbatch run.slurm
-- - squeue gives job status
+- - squeue gives job status: squeue --user=$(whoami)
 - - slurm/*.txt files contain std. error and output redirects (the location can be
 configured in run.slurm)

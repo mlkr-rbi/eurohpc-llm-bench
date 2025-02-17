@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# copy to run.slurm, edit the parameters if required,
+# and run: sbatch run.slurm
+
+# SLURM job directives
+## account-related setup
+#SBATCH --account=EUHPC_B18_060                # Project account
+#SBATCH --partition=boost_usr_prod      # max. nodes (cores), wallclock: 100 (8000),	72h
+#SBATCH --qos=boost_qos_dbg                   # Quality of Service (QoS) level
+## acc_ehpc is the "queue" we need to use, its params are here:
+## https://www.bsc.es/supportkc/docs/MareNostrum5/slurm/#queues-qos
+
+## fixed params
+#SBATCH --job-name=my_job_name         # Name of the job
+#SBATCH --output=slurm/output.%j.log   # Standard output file (with job ID)
+#SBATCH --error=slurm/error.%j.log     # Standard error file (with job ID)
+#SBATCH --mail-type=none               # {begin|end|all|none}
+#SBATCH --mail-user=user@example.com   # Email for notifications
+## ntasks needs to be 1 for deepspeed: https://huggingface.co/docs/transformers/deepspeed
+#SBATCH --ntasks-per-node=1            # Number of tasks per node
+
+## resources, below is the test setup, change as needed for production
+## effective batch size is nodes * gpus * batch_per_gpu (huggingface param)
+#SBATCH --nodes=2                     # Number of nodes required
+#SBATCH --cpus-per-task=16             # Number of CPUs per task
+#SBATCH --gres=gpu:4                   # Number of GPUs per node, max. 4 for marenostrum5
+## max. 72hrs for acc_ehpc
+#SBATCH --time=00:10:00                # Maximum runtime (HH:MM:SS)
+
+# leonardo $WORK points to shared project folder
+ROOT_DIR="$WORK"
+
+# VENV SETUP - does not work
+## Load required modules
+#module load profile/deeplrn cineca-ai/4.3.0
+## setup the virtual environment
+#source /leonardo/home/userexternal/dkorenci/venvs/venv1/bin/activate
+## Ensure the venv remains active for srun
+#export VIRTUAL_ENV=/leonardo/home/userexternal/dkorenci/venvs/venv1
+#export PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# CONDA SETUP
+source $ROOT_DIR/bin/setup_env.sh
+eval "$(conda shell.bash hook)"
+conda activate $ROOT_DIR/conda_envs/env1
+
+# Set environment variables if needed
+## for deepspeed
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+export MASTER_PORT=$(( RANDOM % 10000 + 30000 ))  # Random port between 30000-39999
+
+# experiment (learning etc.), and deepspeed configuration files
+EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
+DEEPSPEED_CONFIG="experiments/deepspeed/deepspeed_test.json"
+
+# run the job
+# Your commands or executable script go here
+srun deepspeed main.py --deepspeed $DEEPSPEED_CONFIG --experiment $EXPERIMENT_FILE
