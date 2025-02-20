@@ -7,6 +7,7 @@ dataset_label: "path_to_wikipedia_dataset"
 output_dir_tag: "model_gemma-2-2b"
 logging_dir_tag: "logs_gemma-2-2b"
 num_train_epochs: 3
+max_steps: -1
 max_seq_length: 1024
 gradient_accumulation_steps: 1
 per_device_train_batch_size: 2

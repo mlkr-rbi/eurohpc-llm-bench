@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 from pyarrow import set_timezone_db_path
+from torch.distributed import destroy_process_group
 from transformers.integrations import deepspeed_config
 
 from data_tools.dataset_factory import get_bertic_dataset, get_macocu_text_v1, get_test_cro_dataset
@@ -31,6 +32,8 @@ from transformers import (
     DataCollatorForLanguageModeling
 )
 from datasets import load_dataset, Dataset, DatasetDict, load_from_disk
+
+from utils.misc_utils import remove_hf_checkpoints
 
 
 def get_parser():
@@ -119,6 +122,11 @@ class TokenizerWrapper():
         )
 
 def create_model(model_id: str, quantize_params: dict, peft_params: dict):
+    if 'gemma-2' in model_id.lower():
+        # gemma2 works better with non-optimized attention implementation
+        attn_type_kwargs = {'attn_implementation': 'eager'}
+    else:
+        attn_type_kwargs = {}
     if quantize_params['enabled']:
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=quantize_params['load_in_4bit'],
@@ -130,7 +138,8 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
             config_utils.get_model_path(model_id),
             quantization_config=bnb_config,
             device_map=None,
-            trust_remote_code=True
+            trust_remote_code=True,
+            **attn_type_kwargs
         )
         model.gradient_checkpointing_enable()
         model = prepare_model_for_kbit_training(model)
@@ -138,7 +147,8 @@ def create_model(model_id: str, quantize_params: dict, peft_params: dict):
         model = AutoModelForCausalLM.from_pretrained(
             config_utils.get_model_path(model_id),
             device_map=None,
-            trust_remote_code=True
+            trust_remote_code=True,
+            **attn_type_kwargs
         )
         model.gradient_checkpointing_enable()
     if peft_params['enabled']:
@@ -235,6 +245,7 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         gradient_accumulation_steps=params['gradient_accumulation_steps'],
         per_device_eval_batch_size=params['per_device_eval_batch_size'],
         num_train_epochs=params['num_train_epochs'],
+        max_steps=params['max_steps'],
         logging_strategy="steps", logging_steps=params['logging_steps'],
         eval_strategy=params['eval_strategy'], eval_steps=params['eval_steps'],
         eval_accumulation_steps=4,
@@ -269,16 +280,31 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
             print("Training finished.")
             break
         except (ValueError, FileNotFoundError) as e:
-            msg = str(e)
-            if "no valid checkpoint found" in msg.lower():
+            if resume: # try to train without resuming from checkpoint
+                # if the error is due to something else, it should occur again
                 print("No valid checkpoint found, training from scratch.")
                 resume = False
                 continue
             else:
                 raise e
-    timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir.rename(config_utils.get_models_output_dir() / f"model_{params['model_label']}_{timetag}")
-    logging_dir.rename(config_utils.get_models_output_dir() / f"logs_{params['model_label']}_{timetag}")
+    def cleanup_and_rename():
+        ''' delete checkpoints and rename the output and logging directories '''
+        if torch.distributed.is_initialized() and torch.distributed.get_rank() != 0:
+            return  # Non-main processes skip cleanup
+        timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        remove_hf_checkpoints(output_dir)  # remove all checkpoint folders
+        output_dir.rename(config_utils.get_models_output_dir() / f"model_{params['model_label']}_{timetag}")
+        logging_dir.rename(config_utils.get_models_output_dir() / f"logs_{params['model_label']}_{timetag}")
+    if torch.distributed.is_initialized():
+        torch.distributed.barrier()  # sync all processes before saving
+        if torch.distributed.get_rank() == 0: # save only once, for the main process
+            trainer.save_model()
+            cleanup_and_rename()
+        torch.distributed.barrier()
+        destroy_process_group() # clean up distributed training resources
+    else:
+        trainer.save_model()
+        cleanup_and_rename()
 
 def run_training_yaml(yaml_file):
     with open(yaml_file, 'r') as file:
