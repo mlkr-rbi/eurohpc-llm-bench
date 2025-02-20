@@ -13,7 +13,8 @@ torch
 tqdm
 datasets
 transformers
-tf-keras
+# enable tf-keras this if the native environment nessecitates it, like with py11 on marenostrum
+# tf-keras
 nvidia-ml-py
 mpi4py
 deepspeed
