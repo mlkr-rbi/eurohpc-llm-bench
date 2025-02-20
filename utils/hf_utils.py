@@ -1,6 +1,15 @@
 import os
 import shutil
+import torch.distributed as dist
+from transformers import TrainerCallback
 
+# Define a callback to force a barrier when training finishes.
+class FinalSyncCallback(TrainerCallback):
+    def on_train_end(self, args, state, control, **kwargs):
+        if dist.is_initialized():
+            # Wait until all processes have reached the training-end callback.
+            dist.barrier()
+        return control
 
 def remove_hf_checkpoints(output_dir, checkpoint_prefix="checkpoint-"):
     """

@@ -1,27 +1,17 @@
 ''' training in torch, basically a more structured version of DPmultiGPU.py code '''
-import copy
-from pprint import pprint
-from typing import Dict
+import argparse
 import os
 import sys
 from datetime import datetime
-from pathlib import Path
+from typing import Dict
+import time
 
 import numpy as np
-from pyarrow import set_timezone_db_path
-from torch.distributed import destroy_process_group
-from transformers.integrations import deepspeed_config
-
-from data_tools.dataset_factory import get_bertic_dataset, get_macocu_text_v1, get_test_cro_dataset
-from data_tools.dataset_utils import discard_columns
-from utils import config_utils
-
-import argparse
-import yaml
-
-
 import torch
-from huggingface_hub import login
+import torch.distributed as dist
+from torch.distributed import destroy_process_group
+import yaml
+from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     TrainingArguments,
@@ -31,9 +21,11 @@ from transformers import (
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling
 )
-from datasets import load_dataset, Dataset, DatasetDict, load_from_disk
 
-from utils.misc_utils import remove_hf_checkpoints
+from data_tools.dataset_factory import get_macocu_text_v1, get_test_cro_dataset
+from data_tools.dataset_utils import discard_columns
+from utils import config_utils
+from utils.hf_utils import remove_hf_checkpoints, FinalSyncCallback
 
 
 def get_parser():
@@ -273,11 +265,18 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         data_collator=data_collator,
         compute_metrics=compute_perplexity_metric,
     )
+    # custom barrier callback: when training ends, every process waits.
+    # switched off for now, does not help -> sync error is not checkpoint saving anymore, but log saving
+    # trainer.add_callback(FinalSyncCallback())
+    # start training
     resume = True
     while True:
         try:
             trainer.train(resume_from_checkpoint=resume)
             print("Training finished.")
+            if dist.is_initialized():
+                time.sleep(30)
+                dist.barrier()
             break
         except (ValueError, FileNotFoundError) as e:
             if resume: # try to train without resuming from checkpoint
@@ -289,18 +288,18 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
                 raise e
     def cleanup_and_rename():
         ''' delete checkpoints and rename the output and logging directories '''
-        if torch.distributed.is_initialized() and torch.distributed.get_rank() != 0:
+        if dist.is_initialized() and dist.get_rank() != 0:
             return  # Non-main processes skip cleanup
         timetag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         remove_hf_checkpoints(output_dir)  # remove all checkpoint folders
         output_dir.rename(config_utils.get_models_output_dir() / f"model_{params['model_label']}_{timetag}")
         logging_dir.rename(config_utils.get_models_output_dir() / f"logs_{params['model_label']}_{timetag}")
-    if torch.distributed.is_initialized():
-        torch.distributed.barrier()  # sync all processes before saving
-        if torch.distributed.get_rank() == 0: # save only once, for the main process
+    if dist.is_initialized():
+        dist.barrier()  # sync all processes before saving
+        if dist.get_rank() == 0: # save only once, for the main process
             trainer.save_model()
             cleanup_and_rename()
-        torch.distributed.barrier()
+        dist.barrier()
         destroy_process_group() # clean up distributed training resources
     else:
         trainer.save_model()
