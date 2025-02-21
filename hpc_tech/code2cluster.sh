@@ -34,7 +34,7 @@ fi
 # SSH_HOST - an alias in ~/.ssh/config or a full ssh address
 # REMOTE_ROOT - the 'root' shared project folder where 'models', 'outputs', 'datasets' are stored
 if [ "$MACHINE_NAME" == "mn" ]; then
-    SSH_HOST="mn"
+    SSH_HOST="mna"
     REMOTE_ROOT="/gpfs/projects/ehpc124"
 elif [ "$MACHINE_NAME" == "leo" ]; then
     SSH_HOST="leo" # placeholder for leo machine
