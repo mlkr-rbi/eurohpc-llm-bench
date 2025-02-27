@@ -109,8 +109,9 @@ class TokenizerWrapper():
         return dataset.map(
             self,
             batched=True,
-            num_proc=4,
-            load_from_cache_file=True,
+            num_proc=8,
+            load_from_cache_file=False,
+            keep_in_memory=True,
             remove_columns=["text"]
         )
 
