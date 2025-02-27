@@ -110,6 +110,7 @@ class TokenizerWrapper():
             self,
             batched=True,
             num_proc=4,
+            load_from_cache_file=True,
             remove_columns=["text"]
         )
 
@@ -209,8 +210,6 @@ def setup_and_run_training(params: Dict):
         train_dataset = discard_columns(dataset)
         val_dataset = None
         print(f"Training dataset size: {len(train_dataset)}")
-    tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
-    tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
     model = create_model(model_id, params['quantize'], params['peft'])
     if 'MODEL_TRAINING_OUTPUT' in params:
         config_utils.set_models_output_dir(params['MODEL_TRAINING_OUTPUT'])
@@ -218,11 +217,11 @@ def setup_and_run_training(params: Dict):
         deepspeed_config = config_utils.get_deepspeed_config(params['deepspeed'])
         print(f"Using deepspeed config:\n{deepspeed_config}")
     else: deepspeed_config = None
-    do_training(model, tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val, params, deepspeed_config)
+    do_training(model, tokenizer_wrapper, train_dataset, val_dataset, params, deepspeed_config)
 
-def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_config=None):
+def do_training(model, tokenizer_wrapper, train_dataset, val_dataset, params, deepspeed_config=None):
     data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
+        tokenizer=tokenizer_wrapper.tokenizer,
         mlm=False
     )
     output_dir = config_utils.get_models_output_dir() / params['output_dir_tag']
@@ -257,11 +256,14 @@ def do_training(model, tokenizer, train_dataset, val_dataset, params, deepspeed_
         deepspeed=deepspeed_config,
         dataloader_pin_memory=False,
     )
+    with training_args.main_process_first(desc="Tokenizing dataset"):
+        tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
+        tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
+        train_dataset=tokenized_train,
+        eval_dataset=tokenized_val,
         data_collator=data_collator,
         compute_metrics=compute_perplexity_metric,
     )
