@@ -128,6 +128,13 @@ def hr_en_translate_prompt() -> TranslationPromptComposerABC:
         instruction="TRANSLATE:"
     )
 
+def hr_en_translate_prompt_parabstract() -> TranslationPromptComposerABC:
+    return TranslationPromptComposerFromConfig(
+        prompt_config="mt-en-hr-parabstract-v1",
+        instruct_lang="en",
+        randomize_prompts=True,
+        instruction_tune=False
+    )
 
 def prompt_tst():
     p = hr_en_translate_prompt()
