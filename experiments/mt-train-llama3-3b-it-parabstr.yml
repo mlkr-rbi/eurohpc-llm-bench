@@ -1,0 +1,43 @@
+# test setting for full-parameter training of GEMMA-2-2b on Croatian Wikipedia
+
+action: training # Start training action
+model_id: "meta-llama/Llama-3.2-3B-Instruct"
+model_label: "llama-3-3b"
+dataset_label: "/home/rbi/rbi372971/project/datasets/parabstr_00_drop_none_duplicate_huggingface_translation_dataset"
+output_dir_tag: "model_llama-3-3b"
+logging_dir_tag: "logs_llama-3-3b"
+num_train_epochs: 3
+max_steps: -1
+max_seq_length: 2048
+gradient_accumulation_steps: 1
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 2
+logging_steps: 30
+eval_strategy: "no"
+eval_steps: -1
+save_steps: 2000
+save_total_limit: 2
+learning_rate: 0.0001
+weight_decay: 0.005
+max_grad_norm: 0.3
+warmup_ratio: 0.05
+fp16: False
+bf16: True
+remove_unused_columns: False
+gradient_checkpointing: True
+
+# QUANTIZATION AND PEFT
+quantize:
+  enabled: False
+  load_in_4bit: True
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "torch.bfloat16"
+  bnb_4bit_use_double_quant: False
+peft:
+  enabled: False
+  r: 32
+  lora_alpha: 32
+  target_modules: ["q_proj", "k_proj"]
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
