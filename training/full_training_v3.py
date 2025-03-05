@@ -75,13 +75,11 @@ def get_parser():
     # cached_tokenization, 'tokenize_only'
     parser.add_argument("--cached_tokenization",
                         help="Use cached tokenization.",
-                        required=False,
-                        default=False)
+                        action='store_true')
     parser.add_argument("--tokenize_only",
                         help="Only tokenize the dataset and exit. Expected to be used"
                              "in combination with --cached_tokenization.",
-                        required=False,
-                        default=False)
+                        action='store_true')
     return parser
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
@@ -142,6 +140,7 @@ class TokenizerWrapper():
             if a string, the dataset is loaded from this folder, or if the folder does not exist,
             the result is saved there for subsequent use.
         '''
+        print(f"Attempting to tokenize dataset, cache label = {cache_label}")
         if not cache_label or not get_tokenizer_cache_folder(cache_label, create=False):
             result = self.tokenize_dataset(dataset)
             if cache_label:
@@ -237,7 +236,7 @@ def set_default_device(params: Dict):
         raise ValueError("CUDA device not available.")
     torch.set_default_device('cuda')
 
-def generate_cache_label(params: Dict) -> str:
+def generate_cache_label(params: Dict, split: str) -> str:
     '''
     Label and folder name for caching tokenized datasets.
     It should be unique for relevant elements of given parameter contex -
@@ -245,7 +244,7 @@ def generate_cache_label(params: Dict) -> str:
     '''
     # assume these ara paths (or hierarchical hf model ID), and take the last part as the name
     model_name, dset_name = Path(params['model_id']).name, Path(params['dataset_label']).name
-    return f"tokenized_{model_name}_{dset_name}"
+    return f"tokenized_{model_name}_{dset_name}_{split}"
 
 def setup_and_run_training(params: Dict):
     # 'device' param can break deepspeed run, so best to add it if needed for a particular machine
@@ -266,10 +265,12 @@ def setup_and_run_training(params: Dict):
         val_dataset = None
         print(f"Training dataset size: {len(train_dataset)}")
     # tokenization
-    if params['cached_tokenization'] is True: cache_label = generate_cache_label(params)
-    else: cache_label = None
+    if params['cached_tokenization'] is True:
+        cache_label = generate_cache_label(params, 'train')
+        cache_label_valid = generate_cache_label(params, 'valid')
+    else: cache_label, cache_label_valid = None, None
     tokenized_train = tokenizer_wrapper.tokenize_cache_dataset(train_dataset, cache_label)
-    tokenized_val = tokenizer_wrapper.tokenize_cache_dataset(val_dataset, cache_label) if val_dataset else None
+    tokenized_val = tokenizer_wrapper.tokenize_cache_dataset(val_dataset, cache_label_valid) if val_dataset else None
     # stop here if only tokenization is needed, ex. before the main training run
     if params['tokenize_only'] is True: return
     model = create_model(model_id, params['quantize'], params['peft'])

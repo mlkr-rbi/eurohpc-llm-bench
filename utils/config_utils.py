@@ -127,7 +127,8 @@ def get_tokenizer_cache_folder(cache_label: str, create=False) -> Union[Path, No
      Used for saving and retrieving tokenization results.
      :param cache_label: Label of the tokenization, used as the subfolder or the main tok. caching folder.
      :param create: If True, the folder will be created if it does not exist.
-     :return: Path to the folder or None if the folder does not exist.
+     :return: if create is False and the folder does not exist, returns None, otherwise returns the path to the folder.
+     if create is True, returns the path to the folder if it was created or already existed, otherwise returns None.
      '''
     if not cache_label: return None
     path = Path(settings.TOKENIZER_CACHE_FOLDER) / cache_label
