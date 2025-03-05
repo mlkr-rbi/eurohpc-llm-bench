@@ -266,7 +266,7 @@ def setup_and_run_training(params: Dict):
         val_dataset = None
         print(f"Training dataset size: {len(train_dataset)}")
     # tokenization
-    if params['cached_tokenization']: cache_label = generate_cache_label(params)
+    if params['cached_tokenization'] is True: cache_label = generate_cache_label(params)
     else: cache_label = None
     tokenized_train = tokenizer_wrapper.tokenize_cache_dataset(train_dataset, cache_label)
     tokenized_val = tokenizer_wrapper.tokenize_cache_dataset(val_dataset, cache_label) if val_dataset else None
