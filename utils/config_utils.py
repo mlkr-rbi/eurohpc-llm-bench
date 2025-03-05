@@ -121,6 +121,25 @@ def get_models_dir() -> Path:
     """Get default directory to store custom models."""
     return get_absolute_path(settings.MODELS_DIR)
 
+def get_tokenizer_cache_folder(cache_label: str, create=False) -> Union[Path, None]:
+    '''
+     Path to the folder in which tokenization with the specified label should be located.
+     Used for saving and retrieving tokenization results.
+     :param cache_label: Label of the tokenization, used as the subfolder or the main tok. caching folder.
+     :param create: If True, the folder will be created if it does not exist.
+     :return: Path to the folder or None if the folder does not exist.
+     '''
+    if not cache_label: return None
+    path = Path(settings.TOKENIZER_CACHE_FOLDER) / cache_label
+    if create is False:
+        if os.path.exists(path): return path
+        else: return None
+    else:
+        try: path.mkdir(parents=True, exist_ok=True)
+        except:
+            print(f"WARNING: Failed to create folder for tokenization cache: {path}")
+            return None
+        return path
 
 def get_model_path(model_path: str) -> Path:
     """Get default directory to store custom models."""

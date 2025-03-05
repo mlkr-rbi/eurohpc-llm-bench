@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Dict
 import time
 
@@ -25,7 +26,8 @@ from transformers import (
 from data_tools.dataset_factory import get_macocu_text_v1, get_test_cro_dataset
 from data_tools.dataset_utils import discard_columns
 from utils import config_utils
-from utils.hf_utils import remove_hf_checkpoints, FinalSyncCallback
+from utils.config_utils import get_tokenizer_cache_folder
+from utils.hf_utils import remove_hf_checkpoints
 
 
 def get_parser():
@@ -70,6 +72,16 @@ def get_parser():
                         help="Path to the deepspeed config .json file.",
                         required=False,
                         type=str)
+    # cached_tokenization, 'tokenize_only'
+    parser.add_argument("--cached_tokenization",
+                        help="Use cached tokenization.",
+                        required=False,
+                        default=False)
+    parser.add_argument("--tokenize_only",
+                        help="Only tokenize the dataset and exit. Expected to be used"
+                             "in combination with --cached_tokenization.",
+                        required=False,
+                        default=False)
     return parser
 
 def tokenizer_for_model(model_id: str = "google/gemma-2-2b"):
@@ -106,6 +118,7 @@ class TokenizerWrapper():
         return encoding
 
     def tokenize_dataset(self, dataset):
+        print("Tokenizing dataset...")
         return dataset.map(
             self,
             batched=True,
@@ -114,6 +127,37 @@ class TokenizerWrapper():
             keep_in_memory=True,
             remove_columns=["text"]
         )
+
+    def save_tokenized_dataset(self, tokenized_dataset, save_folder):
+        tokenized_dataset = tokenized_dataset.with_format("torch", columns=["input_ids", "attention_mask"])
+        tokenized_dataset.save_to_disk(save_folder)
+
+    def load_tokenized_dataset(self, save_folder):
+        return load_from_disk(save_folder)
+
+    def tokenize_cache_dataset(self, dataset, cache_label: str = None):
+        '''
+        :param dataset: a huggingface dataset
+        :param cache_label: an id for caching the tokenized dataset, if None, no caching is done,
+            if a string, the dataset is loaded from this folder, or if the folder does not exist,
+            the result is saved there for subsequent use.
+        '''
+        if not cache_label or not get_tokenizer_cache_folder(cache_label, create=False):
+            result = self.tokenize_dataset(dataset)
+            if cache_label:
+                save_folder = get_tokenizer_cache_folder(cache_label, create=True)
+                if save_folder:
+                    print(f"Saving tokenized dataset to {save_folder}")
+                    self.save_tokenized_dataset(result, save_folder)
+        else:
+            print(f"Attempting to load tokenized dataset from {cache_label}")
+            cache_folder = get_tokenizer_cache_folder(cache_label)
+            try:
+                result = self.load_tokenized_dataset(cache_folder)
+                print(f"Loaded tokenized dataset from {cache_folder}")
+            except:
+                result = self.tokenize_dataset(dataset)
+        return result
 
 def create_model(model_id: str, quantize_params: dict, peft_params: dict):
     if 'gemma-2' in model_id.lower():
@@ -193,6 +237,16 @@ def set_default_device(params: Dict):
         raise ValueError("CUDA device not available.")
     torch.set_default_device('cuda')
 
+def generate_cache_label(params: Dict) -> str:
+    '''
+    Label and folder name for caching tokenized datasets.
+    It should be unique for relevant elements of given parameter contex -
+    at least for the model and the dataset.
+    '''
+    # assume these ara paths (or hierarchical hf model ID), and take the last part as the name
+    model_name, dset_name = Path(params['model_id']).name, Path(params['dataset_label']).name
+    return f"tokenized_{model_name}_{dset_name}"
+
 def setup_and_run_training(params: Dict):
     # 'device' param can break deepspeed run, so best to add it if needed for a particular machine
     if 'device' in params: set_default_device(params)
@@ -211,6 +265,13 @@ def setup_and_run_training(params: Dict):
         train_dataset = discard_columns(dataset)
         val_dataset = None
         print(f"Training dataset size: {len(train_dataset)}")
+    # tokenization
+    if params['cached_tokenization']: cache_label = generate_cache_label(params)
+    else: cache_label = None
+    tokenized_train = tokenizer_wrapper.tokenize_cache_dataset(train_dataset, cache_label)
+    tokenized_val = tokenizer_wrapper.tokenize_cache_dataset(val_dataset, cache_label) if val_dataset else None
+    # stop here if only tokenization is needed, ex. before the main training run
+    if params['tokenize_only'] is True: return
     model = create_model(model_id, params['quantize'], params['peft'])
     if 'MODEL_TRAINING_OUTPUT' in params:
         config_utils.set_models_output_dir(params['MODEL_TRAINING_OUTPUT'])
@@ -218,13 +279,12 @@ def setup_and_run_training(params: Dict):
         deepspeed_config = config_utils.get_deepspeed_config(params['deepspeed'])
         print(f"Using deepspeed config:\n{deepspeed_config}")
     else: deepspeed_config = None
-    do_training(model, tokenizer_wrapper, train_dataset, val_dataset, params, deepspeed_config)
+    do_training(model,  tokenizer_wrapper.tokenizer, tokenized_train, tokenized_val,
+                params, deepspeed_config)
 
-def do_training(model, tokenizer_wrapper, train_dataset, val_dataset, params, deepspeed_config=None):
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer_wrapper.tokenizer,
-        mlm=False
-    )
+def do_training(model, tokenizer, tokenized_train, tokenized_val,
+                params, deepspeed_config=None):
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
     output_dir = config_utils.get_models_output_dir() / params['output_dir_tag']
     logging_dir = config_utils.get_models_output_dir() / params['logging_dir_tag']
     # TODO - if deepspeed is used, its parameters (like batch size) should be synced with the training arguments
@@ -257,9 +317,6 @@ def do_training(model, tokenizer_wrapper, train_dataset, val_dataset, params, de
         deepspeed=deepspeed_config,
         dataloader_pin_memory=False,
     )
-    with training_args.main_process_first(desc="Tokenizing dataset"):
-        tokenized_train = tokenizer_wrapper.tokenize_dataset(train_dataset)
-        tokenized_val = tokenizer_wrapper.tokenize_dataset(val_dataset) if val_dataset else None
     trainer = Trainer(
         model=model,
         args=training_args,

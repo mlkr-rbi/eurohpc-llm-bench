@@ -5,6 +5,7 @@ current_module_path = os.path.abspath(os.path.dirname(__file__))
 
 ### Change username with your name please - so we all know who produce these models
 MODEL_TRAINING_OUTPUT = 'models/username'
+TOKENIZER_CACHE_FOLDER = 'tokenizer_cache'
 
 HUGGINGFACE_TOKEN = ''
 
