@@ -56,4 +56,5 @@ DEEPSPEED_CONFIG="experiments/deepspeed/deepspeed_test.json"
 
 # run the job
 # Your commands or executable script go here
-srun deepspeed main.py --deepspeed $DEEPSPEED_CONFIG --experiment $EXPERIMENT_FILE
+srun --nodes=1 --ntasks=1 python main.py --experiment $EXPERIMENT_FILE --cached_tokenization --tokenize_only
+srun deepspeed main.py --deepspeed $DEEPSPEED_CONFIG --experiment $EXPERIMENT_FILE --cached_tokenization
