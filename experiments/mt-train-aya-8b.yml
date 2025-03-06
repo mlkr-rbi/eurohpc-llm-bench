@@ -1,0 +1,43 @@
+# test setting for full-parameter training of CohereForAI/aya-23-8B on parallel abstracts
+
+action: training # Start training action
+model_id: "CohereForAI/aya-23-8B"
+model_label: "aya-8b"
+dataset_label: "datasets/parabstr_final_huggingface_translation_dataset"
+output_dir_tag: "model_aya8b"
+logging_dir_tag: "logs_aya8b"
+num_train_epochs: 3
+max_steps: -1
+max_seq_length: 2500
+gradient_accumulation_steps: 1
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+logging_steps: 20
+eval_strategy: "no"
+eval_steps: -1
+save_steps: 5000
+save_total_limit: 2
+learning_rate: 0.0001
+weight_decay: 0.005
+max_grad_norm: 0.3
+warmup_ratio: 0.05
+fp16: False
+bf16: True
+remove_unused_columns: False
+gradient_checkpointing: True
+
+# QUANTIZATION AND PEFT
+quantize:
+  enabled: False
+  load_in_4bit: True
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "torch.bfloat16"
+  bnb_4bit_use_double_quant: False
+peft:
+  enabled: False
+  r: 32
+  lora_alpha: 32
+  target_modules: ["q_proj", "k_proj"]
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
