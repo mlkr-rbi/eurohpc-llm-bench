@@ -27,7 +27,7 @@ from data_tools.dataset_factory import get_macocu_text_v1, get_test_cro_dataset
 from data_tools.dataset_utils import discard_columns
 from utils import config_utils
 from utils.config_utils import get_tokenizer_cache_folder
-from utils.hf_utils import remove_hf_checkpoints
+from utils.hf_utils import remove_hf_checkpoints, print_available_ram
 
 
 def get_parser():
@@ -248,6 +248,7 @@ def generate_cache_label(params: Dict, split: str) -> str:
 
 def setup_and_run_training(params: Dict):
     # 'device' param can break deepspeed run, so best to add it if needed for a particular machine
+    print_available_ram()
     if 'device' in params: set_default_device(params)
     model_id = params['model_id']
     # todo add hf login as a parameter; until then, uncomment first time when using, to download the model
@@ -302,7 +303,8 @@ def do_training(model, tokenizer, tokenized_train, tokenized_val,
         logging_strategy="steps", logging_steps=params['logging_steps'],
         eval_strategy=params['eval_strategy'], eval_steps=params['eval_steps'],
         label_names=params["label_names"] if 'label_names' in params else None,
-        eval_accumulation_steps=4,
+        eval_accumulation_steps=1,
+        eval_do_concat_batches=False,
         prediction_loss_only=False,
         save_strategy="steps", save_steps=params['save_steps'],
         save_total_limit=params['save_total_limit'],

@@ -1,5 +1,5 @@
 import os
-import shutil
+import shutil, psutil
 import torch.distributed as dist
 from transformers import TrainerCallback
 
@@ -22,3 +22,11 @@ def remove_hf_checkpoints(output_dir, checkpoint_prefix="checkpoint-"):
             checkpoint_path = os.path.join(output_dir, folder_name)
             shutil.rmtree(checkpoint_path)
             print(f"Deleted {checkpoint_path}")
+
+def print_available_ram():
+    total_memory = psutil.virtual_memory().total
+    total_memory_gb = total_memory / (1024 ** 3)
+    print(f"Total available RAM: {total_memory_gb:.2f} GB")
+    free_memory = psutil.virtual_memory().free
+    free_memory_gb = free_memory / (1024 ** 3)
+    print(f"Free RAM: {free_memory_gb:.2f} GB")
