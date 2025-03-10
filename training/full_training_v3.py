@@ -303,7 +303,7 @@ def do_training(model, tokenizer, tokenized_train, tokenized_val,
         logging_strategy="steps", logging_steps=params['logging_steps'],
         eval_strategy=params['eval_strategy'], eval_steps=params['eval_steps'],
         label_names=params["label_names"] if 'label_names' in params else None,
-        eval_accumulation_steps=1,
+        eval_accumulation_steps=2,
         eval_do_concat_batches=False,
         prediction_loss_only=False,
         save_strategy="steps", save_steps=params['save_steps'],
@@ -326,8 +326,7 @@ def do_training(model, tokenizer, tokenized_train, tokenized_val,
         args=training_args,
         train_dataset=tokenized_train,
         eval_dataset=tokenized_val,
-        data_collator=data_collator,
-        compute_metrics=compute_perplexity_metric,
+        data_collator=data_collator
     )
     # custom barrier callback: when training ends, every process waits.
     # switched off for now, does not help -> sync error is not checkpoint saving anymore, but log saving
