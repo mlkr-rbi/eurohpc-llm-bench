@@ -221,12 +221,13 @@ def predict(**kwargs):
             inputs = {k: v.to(model.device) for k, v in inputs.items()}
             # Generate tokens using the model
             _kwargs = map_kwargs(GENERATE_KWARGS_MAP, **kwargs)
-            terminators = [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("\n")] # TODO: terminators are not working
-            # delete 'max_length' from kwargs, use 'max_new_tokens' instead
+            # use 'max_new_tokens' instead of 'max_length'
             del _kwargs['max_length']
             _kwargs['max_new_tokens'] = max_length
             #outputs = model.generate(input_ids, eos_token_id=terminators, **_kwargs)
-            outputs = model.generate(eos_token_id=terminators, **inputs, **_kwargs)
+            outputs = model.generate(eos_token_id=tokenizer.eos_token_id,
+                                     pad_token_id=tokenizer.pad_token_id,
+                                     **inputs, **_kwargs)
             # Decode the generated tokens back to text
             generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
             predictions.append(generated_text[len(prompt):])
