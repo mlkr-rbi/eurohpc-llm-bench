@@ -1,7 +1,7 @@
 '''
 Metods for creating production (training and/or testing ready) datasets.
 '''
-from datasets import load_dataset, Dataset, DatasetDict
+from datasets import load_dataset, Dataset, DatasetDict, load_from_disk
 
 from utils import config_utils
 from data_tools import macocu_corpus
@@ -21,6 +21,9 @@ def get_bertic_dataset(subsample=5000, rseed=5439):
     dset = Dataset.from_list([{ 'text': txt.strip() } for txt in dset])
     return dset
 
+def get_parabstr_dataset():
+    #return load_from_disk("datasets/parabstr_final_huggingface_translation_dataset")
+    return load_from_disk("/data/datasets/corpora/parabstract/parabstr_final_huggingface_translation_dataset/")
 
 def get_test_cro_dataset(subsample=5000, rseed=5439):
     '''
@@ -74,6 +77,7 @@ DATASETS = {
     'macocu-texts': get_macocu_text_v1,
     'bertic': get_bertic_dataset,
     # 'alpaca': get_test_cro_dataset,
+    'parabstr': get_parabstr_dataset,
 }
 
 def get_original_dataset(dataset_name: str="macocu") -> DatasetDict:
