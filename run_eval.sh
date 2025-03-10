@@ -1,3 +1,3 @@
-EXPERIMENT_FILE="mt-eval-yugogpt-test.yml"
+EXPERIMENT_FILE="mt-eval-parabstr-test.yml"
 
 python main.py --experiment $EXPERIMENT_FILE
