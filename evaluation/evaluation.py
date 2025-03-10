@@ -9,6 +9,7 @@ Sources:
 - GPU HF Inference: https://huggingface.co/docs/transformers/perf_infer_gpu_one
 
 """
+from pprint import pprint
 from typing import Dict, List
 from pathlib import Path
 import argparse
@@ -46,6 +47,7 @@ GENERATE_KWARGS_MAP = {
     'max_length': 'max_length',
     'num_return_sequences': 'num_return_sequences',
     'do_sample': 'do_sample',
+    'temperature': 'temperature',
     'top_k': 'top_k',
     'top_p': 'top_p',
 }
@@ -133,8 +135,7 @@ def get_model(**kwargs):
         _kwargs['quantization_config'] = QUANTIZATION_CONFIGS[_kwargs['quantization_config']]
     # Check if model path exists locally
     path = config_utils.get_model_path(_kwargs['pretrained_model_name_or_path'])
-    if path.exists():
-        _kwargs['pretrained_model_name_or_path'] = path
+    _kwargs['pretrained_model_name_or_path'] = path
     try:
         return AutoModelForCausalLM.from_pretrained(**_kwargs)
     except:
@@ -146,23 +147,20 @@ def get_tokenizer(**kwargs):
     _kwargs = map_kwargs(TOKENIZER_KWARGS_MAP, **kwargs)
     # Check if model path exists locally
     path = config_utils.get_model_path(_kwargs['pretrained_model_name_or_path'])
-    if path.exists():
-        _kwargs['pretrained_model_name_or_path'] = path
-        return AutoTokenizer.from_pretrained(**_kwargs)
+    _kwargs['pretrained_model_name_or_path'] = path
     return AutoTokenizer.from_pretrained(**_kwargs)
-
 
 def get_dataset(dataset_name: str,
                 prompts: str,
                 start_lang: str,
-                instruct_lang: str, 
+                dest_lang: str,
+                instruct_lang: str,
                 split: str='validation',
                 randomize_prompts: bool=False):
     prompt = get_prompt(prompt_config=prompts,
                         instruct_lang=instruct_lang,
                         randomize_prompts=randomize_prompts)
     dataset = get_original_dataset(dataset_name)[split]
-    dest_lang = list(set(dataset.column_names).difference(set([start_lang])))[0]
     def add_prompt(example):
         example[start_lang] = prompt.query_prompt(example[start_lang], start_lang)
         return example        
@@ -174,13 +172,14 @@ def get_dataset(dataset_name: str,
 def get_datasets(datasets: List[str],
                  prompts: str,
                  start_lang: str,
+                 dest_lang: str,
                  instruct_lang: str, 
                  split: str='validation',
                  randomize_prompts: bool=False,
                  **kwargs):
     ans = {}
     for dataset_name in datasets:
-        dataset = get_dataset(dataset_name, prompts, start_lang, instruct_lang, split, randomize_prompts)
+        dataset = get_dataset(dataset_name, prompts, start_lang, dest_lang, instruct_lang, split, randomize_prompts)
         ans[dataset_name] = dataset
     return ans
 
@@ -189,10 +188,17 @@ def predict(**kwargs):
     """Get predictions for causal language model."""
     model = get_model(**kwargs)
     tokenizer = get_tokenizer(**kwargs)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
     datasets = get_datasets(**kwargs)
     # Enable cache
     model.config.use_cache = True
-    # Make and save predictions for each dataset        
+    if 'max_length' in kwargs: max_length = kwargs['max_length']
+    else:
+        print("Warning: max length not defined, using default value of 512.")
+        max_length = 512
+    tokenizer.model_max_length = max_length
+    # Make and save predictions for each dataset
     for dataset_name in datasets:
         predictions = []
         dataset = datasets[dataset_name]
@@ -205,12 +211,22 @@ def predict(**kwargs):
         for i in tqdm(range(max_examples)): 
             # Tokenize the input prompt
             prompt = dataset['inputs'][i]
-            input_ids = tokenizer(prompt, return_tensors='pt').input_ids
-            input_ids = input_ids.to(model.device)
+            inputs = tokenizer(
+                prompt,
+                padding="max_length",
+                truncation=True,
+                max_length=max_length,
+                return_tensors='pt'
+            )
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
             # Generate tokens using the model
             _kwargs = map_kwargs(GENERATE_KWARGS_MAP, **kwargs)
             terminators = [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("\n")] # TODO: terminators are not working
-            outputs = model.generate(input_ids, eos_token_id=terminators, **_kwargs)
+            # delete 'max_length' from kwargs, use 'max_new_tokens' instead
+            del _kwargs['max_length']
+            _kwargs['max_new_tokens'] = max_length
+            #outputs = model.generate(input_ids, eos_token_id=terminators, **_kwargs)
+            outputs = model.generate(eos_token_id=terminators, **inputs, **_kwargs)
             # Decode the generated tokens back to text
             generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
             predictions.append(generated_text[len(prompt):])
