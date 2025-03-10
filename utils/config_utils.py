@@ -197,7 +197,8 @@ def get_experiment_output_dir(experiment: str=None, reset: bool=False) -> Path:
 
 def get_experiment_output_prediction_file(dataset_name: str,
                                           experiment_output_dir: Path=None,
-                                          experiment: str=None) -> Path:
+                                          experiment: str=None,
+                                          suffix=".csv") -> Path:
     """Get path to the prediction file for given dataset in experiment output directory.
 
     Args:
@@ -210,7 +211,7 @@ def get_experiment_output_prediction_file(dataset_name: str,
     """
     if experiment_output_dir == None:
         experiment_output_dir = get_experiment_output_dir(experiment=experiment)
-    return experiment_output_dir / (dataset_name + ".csv")
+    return experiment_output_dir / (dataset_name + suffix)
 
 
 def get_experiment_output_prediction(dataset_name: str,
@@ -226,8 +227,8 @@ def get_experiment_output_prediction(dataset_name: str,
     Returns:
         Dict[str, List[str]]: Dictionary with inputs, outputs and predictions for given dataset. 
     """
-    pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment)
-    df = pd.read_csv(pred_file)
+    pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment, suffix=".xlsx")
+    df = pd.read_excel(pred_file)
     ans = {
         'inputs':      df['inputs'].to_list(),
         'outputs':     df['outputs'].to_list(),
@@ -252,7 +253,7 @@ def save_experiment_output_prediction(inputs: List[str],
         experiment_output_dir (Path, optional): Experiment output directory path. Defaults to None.
         experiment (str, optional): The name of the experiment created from experiment configuration file name. Defaults to None.
     """
-    pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment)
+    pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment, suffix=".xlsx")
     l = min(len(inputs), len(outputs), len(predictions))
     d = {
         'inputs':      inputs[:l],
@@ -260,7 +261,7 @@ def save_experiment_output_prediction(inputs: List[str],
         'predictions': predictions[:l],
     }
     df = pd.DataFrame(d)
-    df.to_csv(pred_file)
+    df.to_excel(pred_file, index=False)
 
 
 def get_experiment_output_scores_file(dataset_name: str,
