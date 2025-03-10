@@ -103,6 +103,10 @@ def get_parser():
                         help="Language code to set original language form which we translate.",
                         required=False,
                         type=str)
+    parser.add_argument("--dest_lang",
+                        help="Language code to set original language form which we translate.",
+                        required=False,
+                        type=str)
     parser.add_argument("--max_examples",
                         help="Set maximal number of examples per dataset to limit computation time.",
                         required=False,
