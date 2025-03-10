@@ -23,6 +23,7 @@ bitsandbytes
 tensorboard
 nltk
 rouge-score
+openpyxl
 # for enabling wider set of tokenizers required by some huggingface models
 tiktoken
 blobfile
