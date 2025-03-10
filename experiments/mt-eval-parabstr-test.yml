@@ -14,8 +14,8 @@ do_sample: False  # Optional: Enable sampling for diverse outputs
 split: "test"
 prompts: "mt-en-hr-parabstract-v1" # Set prompt configuration file
 start_lang: "en" # Set starting language code
-instruct_lang: "en" # Set instruction language code
 dest_lang: "hr" # Set destination language code
+instruct_lang: "en" # Set instruction language code
 randomize_prompts: True # Set True to randomize prompt variations
 max_examples: 3 # Set maximal number of examples per dataset to limit computation time during debugging
 datasets: # A list of dataset names
