@@ -170,6 +170,7 @@ def create_experiment_output_dir(experiment: str=None):
     """
     global __experiment_output_dir
     experiment = Path(experiment).stem
+    #TODO add milisecs or process id, to avoid clashing on a cluster with many eval jobs run at the same time
     idx = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     exp_file_name = experiment + "-" + idx
     path = get_outputs_dir() / exp_file_name
