@@ -30,3 +30,20 @@ def print_available_ram():
     free_memory = psutil.virtual_memory().free
     free_memory_gb = free_memory / (1024 ** 3)
     print(f"Free RAM: {free_memory_gb:.2f} GB")
+
+
+def real_length_in_tokens(tok_output, tokenizer):
+    '''
+    For a hf tokenizer and its outputs, calculate the real length
+    of the input prompt, in the number of tokens.
+    :param tok_output: results of tokenizer(prompt)
+    :param tokenizer: huggingface tokenizer
+    '''
+    input_ids = tok_output['input_ids'][0]
+    eos_token_id = tokenizer.eos_token_id
+    real_length = 0
+    for token_id in input_ids:
+        if token_id == eos_token_id:
+            break
+        real_length += 1
+    return real_length

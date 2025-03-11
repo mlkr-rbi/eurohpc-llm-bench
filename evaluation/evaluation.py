@@ -9,7 +9,6 @@ Sources:
 - GPU HF Inference: https://huggingface.co/docs/transformers/perf_infer_gpu_one
 
 """
-from pprint import pprint
 from typing import Dict, List
 from pathlib import Path
 import argparse
@@ -23,7 +22,7 @@ from data_tools.dataset_factory import get_original_dataset
 from data_tools.prompt_tools import get_prompt
 from evaluation.metrics import get_metric
 from utils import config_utils
-
+from utils.hf_utils import real_length_in_tokens
 
 QUANTIZATION_CONFIGS = {
     'fp4': BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="fp4"),
@@ -215,6 +214,7 @@ def predict(**kwargs):
         for i in tqdm(range(max_examples)): 
             # Tokenize the input prompt
             prompt = dataset['inputs'][i]
+            print(f"Prompt: {prompt}", "\n")
             inputs = tokenizer(
                 prompt,
                 padding="max_length",
@@ -222,13 +222,15 @@ def predict(**kwargs):
                 max_length=max_length,
                 return_tensors='pt'
             )
+            # calc. num. generated tokens
+            real_length = real_length_in_tokens(inputs, tokenizer)
+            #print(f"Real length: {real_length}", "\n")
             inputs = {k: v.to(model.device) for k, v in inputs.items()}
             # Generate tokens using the model
             _kwargs = map_kwargs(GENERATE_KWARGS_MAP, **kwargs)
-            # use 'max_new_tokens' instead of 'max_length'
-            del _kwargs['max_length']
-            _kwargs['max_new_tokens'] = max_length
-            #outputs = model.generate(input_ids, eos_token_id=terminators, **_kwargs)
+            del _kwargs['max_length'] # use 'max_new_tokens' instead of 'max_length' for precise control
+            _kwargs['max_new_tokens'] = int(real_length * 1.15) if real_length != 0 else max_length
+            #print(f"Max new tokens: {_kwargs['max_new_tokens']}", "\n")
             outputs = model.generate(eos_token_id=tokenizer.eos_token_id,
                                      pad_token_id=tokenizer.pad_token_id,
                                      **inputs, **_kwargs)
