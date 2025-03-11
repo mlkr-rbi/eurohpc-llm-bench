@@ -229,10 +229,12 @@ def get_experiment_output_prediction(dataset_name: str,
     """
     pred_file = get_experiment_output_prediction_file(dataset_name, experiment_output_dir, experiment, suffix=".xlsx")
     df = pd.read_excel(pred_file)
+    def list_to_strings(lst):
+        return [str(x) for x in lst]
     ans = {
-        'inputs':      df['inputs'].to_list(),
-        'outputs':     df['outputs'].to_list(),
-        'predictions': df['predictions'].to_list(),
+        'inputs':      list_to_strings(df['inputs'].to_list()),
+        'outputs':     list_to_strings(df['outputs'].to_list()),
+        'predictions': list_to_strings(df['predictions'].to_list()),
     }
     return ans
 
