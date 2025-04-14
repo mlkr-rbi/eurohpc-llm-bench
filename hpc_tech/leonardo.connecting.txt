@@ -1,0 +1,43 @@
+
+Connection instructions:
+[1] https://wiki.u-gov.it/confluence/display/SCAIUS/Setup+client+step-cli%3A+Linux+and+Mac+users
+[2] https://wiki.u-gov.it/confluence/display/SCAIUS/EUROfusion+users%3A+Marconi+and+Leonardo+environments?preview=%2F796951345%2F796951348%2FSlides_2fa.pdf
+
+- connection method
+
+1. according to the instructions from the email, open an account at sso.hpc.cineca.it
+a new password is needed, different from the web interface;
+the username here is either the (irb) email, or the username assigned for ssh
+
+2. install FreeOTP on your phone and connect it with sso.hpc.cineca.it
+
+3. install 'smallstep' and connect it with cineca
+installation instructions: https://smallstep.com/docs/step-cli/installation/#debian-ubuntu
+// on ubuntu there is already another 'step' tool, remove it if needed
+// install the certificate for cineca in step:
+step ca bootstrap --ca-url https://sshproxy.hpc.cineca.it --fingerprint 2ae1543202304d3f434bdc1a2c92eff2cd2b02110206ef06317e70c1c1735ecd
+
+4. actual connection
+// downloads a temporary ssh certificate (rsa key) valid for 12 hours
+// it should automatically add the key to ssh agent, if not, check instructions [2]
+step ssh login '<user-email>' --provisioner cineca-hpc
+. use the irb email used for cineca account, probably firstname.lastname@irb.hr
+. from the console, a link will be opened to sso.hpc.cineca.it -> log in using the password, enter the SSO code from phone
+// uname is shown e.g. on sso.hpc.cineca.it
+ssh uname@login.leonardo.cineca.it
+
+5. FINGERPRINT RESET
+login.leonardo.cineca.it is an alias that redirects to individual login machines
+that’s why it’s normal to get an "RSA fingerprint error" when opening a new console or with a new scp command
+solutions:
+1. in .ssh/config add a 'leonardo' host with option 'StrictHostKeyChecking no' and use 'leonardo' for ssh operations
+2. add to each ssh command: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null user@hostname
+3. each time, copy-paste the command from the error message that removes the old saved fingerprint:
+.. e.g.: ssh-keygen -f '/home/USERNAME/.ssh/known_hosts' -R 'login.leonardo.cineca.it'
+
+Host leonardo
+	HostName login.leonardo.cineca.it
+	User username
+	StrictHostKeyChecking no
+	ServerAliveInterval 180
+	ServerAliveCountMax 5

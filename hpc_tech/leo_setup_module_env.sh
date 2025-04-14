@@ -1,0 +1,3 @@
+module load anaconda3/2023.09-0
+module load profile/deeplrn
+module load cuda/12.1 nccl/2.19.1-1--gcc--12.2.0-cuda-12.1 cudnn/8.9.7.29-12--gcc--12.2.0-cuda-12.1 gcc/12.2.0 openmpi/4.1.6--gcc--12.2.0 bzip2/1.0.8-gp5wcz5 libmd/1.0.4-wja3f5q libbsd/0.11.7-cgxjopl expat/2.5.0-bptl3xw ncurses/6.4-asx3jea readline/8.2-nyw6mp6 gdbm/1.23-fs6otck libiconv/1.17-d7yvx2s xz/5.4.1-hubmwr5 zlib-ng/2.1.4-6htiapk libxml2/2.10.3-5eeeokp pigz/2.7-bopr5vp zstd/1.5.5-gawytfl tar/1.34-amqus5s gettext/0.22.3-2g7elif libffi/3.4.4-6r7brdq libxcrypt/4.4.35-ss2rzin sqlite/3.43.2 util-linux-uuid/2.38.1-jkdi7kv cmake/3.27.7 openjdk/11.0.20.1_1
