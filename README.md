@@ -10,8 +10,9 @@ The project, initially inspired by the Gemma2-challenge on Kaggle, focused on fi
 The repository contains LLM fine-tuning code (based on HuggingFace and deepspeed), configuration files, 
 helper scripts, documentation of setup procedures, etc. 
 
-The code worked on both Marenostrum 5 and Leonardo supercomputers on March 1st 2025.
+The code worked on both MareNostrum ACC 5 and Leonardo Booster clusters in March 2025.
 If we are granted access to these or similar clusters in the future, we will continue to develop the code.
+Note that the code is work in progress and has been developed with a limited time budget.
 
 The code is released under the Apache 2.0 license. 
 
