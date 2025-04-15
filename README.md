@@ -14,7 +14,7 @@ The code worked on both MareNostrum ACC 5 and Leonardo Booster clusters in March
 If we are granted access to these or similar clusters in the future, we will continue to develop the code.
 Note that the code is work in progress and has been developed with a limited time budget.
 
-The code is released under the Apache 2.0 license. 
+The code is released under the Apache License 2.0 
 
 # overview
 - training - contains all the iterations of the training code
