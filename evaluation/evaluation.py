@@ -231,12 +231,13 @@ def predict(**kwargs):
             # Generate tokens using the model
             _kwargs = map_kwargs(GENERATE_KWARGS_MAP, **kwargs)
             del _kwargs['max_length'] # use 'max_new_tokens' instead of 'max_length' for precise control
-            # TODO: solve principally via params, this is a parabstract hack
-            if dest_lang == 'hr':
-                max_new_tokens = int(real_length * 1.5) if real_length != 0 else max_length
-            else:
-                max_new_tokens = int(real_length * 1.0) if real_length != 0 else max_length
+            # TODO: solve principally via a param, this is a hack for languages with different expected num. tokens, now disabled
+            # if dest_lang == 'hr':
+            #     max_new_tokens = int(real_length * 1.5) if real_length != 0 else max_length
+            # else:
+            #     max_new_tokens = int(real_length * 1.0) if real_length != 0 else max_length
             #print(f"Dest: {dest_lang}, real length: {real_length}, Max new tokens: {max_new_tokens}", "\n")
+            max_new_tokens = max_length
             _kwargs['max_new_tokens'] = max_new_tokens
             #print(f"Max new tokens: {_kwargs['max_new_tokens']}", "\n")
             outputs = model.generate(eos_token_id=tokenizer.eos_token_id,
