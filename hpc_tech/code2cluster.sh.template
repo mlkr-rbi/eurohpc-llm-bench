@@ -21,6 +21,9 @@ if [ $# -lt 3 ]; then
     exit 1
 fi
 
+MN_PROJECT_ID=""
+LEO_PROJECT_ID=""
+
 MACHINE_NAME=$1
 CODE_FOLDER=$2
 PRESERVE_SETTINGS=$3
@@ -35,10 +38,10 @@ fi
 # REMOTE_ROOT - the 'root' shared project folder where 'models', 'outputs', 'datasets' are stored
 if [ "$MACHINE_NAME" == "mn" ]; then
     SSH_HOST="mna"
-    REMOTE_ROOT="/gpfs/projects/ehpc124"
+    REMOTE_ROOT="/gpfs/projects/$MN_PROJECT_ID"
 elif [ "$MACHINE_NAME" == "leo" ]; then
     SSH_HOST="leo" # placeholder for leo machine
-    REMOTE_ROOT="/leonardo_work/EUHPC_B18_060"
+    REMOTE_ROOT="/leonardo_work/$LEO_PROJECT_ID"
 else
     echo "Invalid machine name. Use 'mn' or 'leo'."
     exit 1

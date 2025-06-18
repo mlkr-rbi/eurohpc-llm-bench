@@ -6,6 +6,7 @@
 .vscode
 .idea
 
+code2cluster.sh
 
 # python
 
