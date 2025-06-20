@@ -1,6 +1,6 @@
 pysqlite3
 accelerate
-huggingface_hub
+huggingface_hub #for py12? huggingface-hub>=0.30.0,<1.0
 matplotlib
 numpy
 pandas
@@ -14,7 +14,7 @@ tqdm
 datasets
 transformers
 # enable tf-keras this if the native environment nessecitates it, like with py11 on marenostrum
-# tf-keras
+tf-keras
 nvidia-ml-py
 mpi4py
 deepspeed
