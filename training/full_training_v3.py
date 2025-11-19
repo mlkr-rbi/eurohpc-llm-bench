@@ -96,13 +96,14 @@ class TokenizerWrapper():
     Utility class that encapsulates a huggingface tokenizer, and the tokenization options and operations.
     '''
 
-    def __init__(self, model_id, max_seq_length: int = 512):
+    def __init__(self, model_id, max_seq_length: int = 512, add_special_tokens: bool = True):
         tokenizer = AutoTokenizer.from_pretrained(config_utils.get_model_path(model_id))
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "right"
         tokenizer.model_max_length=max_seq_length
         self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
+        self.add_special_tokens = add_special_tokens
 
     def __call__(self, examples):
         encoding = self.tokenizer(
@@ -110,7 +111,8 @@ class TokenizerWrapper():
             padding="max_length",
             truncation=True,
             max_length=self.max_seq_length,
-            return_tensors=None
+            return_tensors=None,
+            add_special_tokens=self.add_special_tokens,
         )
         encoding["labels"] = encoding["input_ids"].copy()
         return encoding
@@ -254,7 +256,8 @@ def setup_and_run_training(params: Dict):
     # todo add hf login as a parameter; until then, uncomment first time when using, to download the model
     #if 'gemma' in model_id.lower(): config_utils.huggingface_login()
     if 'max_seq_length' not in params.keys(): params['max_seq_length'] = 512 # Set default, TODO: Remove
-    tokenizer_wrapper = TokenizerWrapper(model_id, max_seq_length=params['max_seq_length'])
+    tokenizer_wrapper = TokenizerWrapper(model_id, max_seq_length=params['max_seq_length'],
+                                         add_special_tokens=params.get('add_special_tokens', True))
     dataset = dataset_loader(params['dataset_label'])
     if isinstance(dataset, DatasetDict) and 'train' in dataset and 'validation' in dataset:
         train_dataset = discard_columns(dataset['train'])
