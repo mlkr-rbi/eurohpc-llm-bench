@@ -128,9 +128,9 @@ def hr_en_translate_prompt() -> TranslationPromptComposerABC:
 
 def hr_en_translate_prompt_parabstract() -> TranslationPromptComposerABC:
     return TranslationPromptComposerFromConfig(
-        prompt_config="mt-en-hr-parabstract-v1",
+        prompt_config="mt-en-hr-single-instruct",
         instruct_lang="en",
-        randomize_prompts=True,
+        randomize_prompts=False,
         instruction_tune=False
     )
 
