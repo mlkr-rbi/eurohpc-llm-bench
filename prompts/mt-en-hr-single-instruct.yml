@@ -1,0 +1,11 @@
+en: # instruction language
+  en: # start language, ie. en-hr
+    - "Translate the following text from English to Croatian. ENGLISH: {input} CROATIAN: {output}"
+  hr: # start language, ie. hr-en
+    - "Translate the following text from Croatian to English. CROATIAN: {input} ENGLISH: {output}"
+
+hr: # instruction language, not to be used, therefore there are no fields -> formatting the prompts should result in an error
+  en: # start language, ie. en-hr
+    - "PREVEDI:ENGLESKI: HRVATSKI: "
+  hr: # start language, ie. hr-en
+    - "PREVEDI:HRVATSKI: ENGLESKI: "

@@ -53,9 +53,7 @@ class TranslationPromptComposer(TranslationPromptComposerABC):
         return label1, label2
 
     def train_prompt(self, text1: str, text2: str, start_lang: str) -> str:
-        label1, label2 = self._assign_lang_labels(start_lang)
-        instr = self._instruction + " " if self._instruction else ""
-        return f"{instr}{label1}: {text1} {label2}: {text2}"
+        return f"{self.query_prompt(text1, start_lang)}{text2}"
 
     def query_prompt(self, text: str, start_lang: str) -> str:
         label1, label2 = self._assign_lang_labels(start_lang)
@@ -130,9 +128,9 @@ def hr_en_translate_prompt() -> TranslationPromptComposerABC:
 
 def hr_en_translate_prompt_parabstract() -> TranslationPromptComposerABC:
     return TranslationPromptComposerFromConfig(
-        prompt_config="mt-en-hr-parabstract-v1",
+        prompt_config="mt-en-hr-single-instruct",
         instruct_lang="en",
-        randomize_prompts=True,
+        randomize_prompts=False,
         instruction_tune=False
     )
 
