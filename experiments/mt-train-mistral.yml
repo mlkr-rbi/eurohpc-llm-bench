@@ -1,0 +1,47 @@
+# test setting for full-parameter training of mistral-v0.1-instruct on parallel abstracts
+# hyperparameters are set according to the experiment is the paper:
+# UNVEILING THE SECRET RECIPE: A GUIDE FOR SUPERVISED FINE-TUNING SMALL LLMS
+
+action: training # Start training action
+model_id: "mistralai/Mistral-7B-Instruct-v0.1"
+model_label: "mistral-7B"
+dataset_label: "/home/rbi/rbi372971/scratch/datasets/parabstr_v2_huggingface_translation_dataset_mistral_trunc"
+add_special_tokens: false
+output_dir_tag: "model_mistral"
+logging_dir_tag: "logs_mistral"
+num_train_epochs: 2
+max_steps: -1
+max_seq_length: 1500
+gradient_accumulation_steps: 16
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+logging_steps: 500
+eval_strategy: "no"
+eval_steps: -1
+save_steps: 1000
+save_total_limit: 1
+learning_rate: 0.000001
+weight_decay: 0.01
+max_grad_norm: 0.3
+lr_scheduler_type: "linear"
+warmup_ratio: 0.01
+fp16: False
+bf16: True
+remove_unused_columns: False
+gradient_checkpointing: True
+
+# QUANTIZATION AND PEFT
+quantize:
+  enabled: False
+  load_in_4bit: True
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "torch.bfloat16"
+  bnb_4bit_use_double_quant: False
+peft:
+  enabled: False
+  r: 32
+  lora_alpha: 32
+  target_modules: ["q_proj", "k_proj"]
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
