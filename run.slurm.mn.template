@@ -5,7 +5,7 @@
 
 # SLURM job directives
 ## account-related setup
-#SBATCH --account=ehpc124              # Project account
+#SBATCH --account=ehpcNNN              # Project account
 #SBATCH --partition=EuroHPC            # max. nodes (cores), wallclock: 100 (8000),	72h
 #SBATCH --qos=acc_ehpc                 # Quality of Service (QoS) level
 ## acc_ehpc is the "queue" we need to use, its params are here:
@@ -23,27 +23,33 @@
 ## resources, below is the test setup, change as needed for production
 ## effective batch size is nodes * gpus * batch_per_gpu (huggingface param)
 #SBATCH --nodes=2                     # Number of nodes required
-#SBATCH --cpus-per-task=16             # Number of CPUs per task
+#SBATCH --cpus-per-task=80             # Number of CPUs per task
 #SBATCH --gres=gpu:4                   # Number of GPUs per node, max. 4 for marenostrum5
 ## max. 72hrs for acc_ehpc
 #SBATCH --time=00:15:00                # Maximum runtime (HH:MM:SS)
 
 
-ROOT_DIR="/gpfs/projects/ehpc124"
+ROOT_DIR="/gpfs/projects/ehpcNNN"
 
 # Load required modules
 module purge
 module load bsc
-source $ROOT_DIR/scripts/support-scripts/load-modules-py311-5.sh
+source $ROOT_DIR/scripts/mn-load-modules-py311-5.sh
 
 # Set environment variables if needed
 ## for deepspeed
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=$(( RANDOM % 10000 + 30000 ))  # Random port between 30000-39999
 
+# to prevent gather-time fragmentation errors
+export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
+#export NCCL_DEBUG=INFO
+
 # experiment (learning etc.), and deepspeed configuration files
-EXPERIMENT_FILE="mt-train-2b-wiki-hr-deepspeed.yml"
+EXPERIMENT_FILE="mt-train-mistral.yml"
 DEEPSPEED_CONFIG="experiments/deepspeed/deepspeed_test.json"
+
+export SRUN_CPUS_PER_TASK=$SLURM_CPUS_PER_TASK
 
 # run the job
 srun --nodes=1 --ntasks=1 python main.py --experiment $EXPERIMENT_FILE --cached_tokenization --tokenize_only
