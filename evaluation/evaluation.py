@@ -21,6 +21,7 @@ from transformers import BitsAndBytesConfig
 
 from data_tools.dataset_factory import get_original_dataset
 from data_tools.prompt_tools import get_prompt
+from data_tools.model_formatters import get_model_formatter
 from evaluation.metrics import get_metric
 from utils import config_utils
 from utils.hf_utils import real_length_in_tokens
@@ -121,6 +122,14 @@ def get_parser():
                         nargs='+',
                         required=False,
                         type=str)
+    parser.add_argument("--model_formatter",
+                        help="Model-specific prompt formatter (e.g., 'mistral-instruct', 'gemma-it', 'llama2-chat').",
+                        required=False,
+                        type=str)
+    parser.add_argument("--test_prompts_only",
+                        help="If set, only generate and print prompts without running inference.",
+                        action='store_true',
+                        required=False)
     return parser
     
 
@@ -160,14 +169,26 @@ def get_dataset(dataset_name: str,
                 dest_lang: str,
                 instruct_lang: str,
                 split: str='validation',
-                randomize_prompts: bool=False):
+                randomize_prompts: bool=False,
+                model_formatter: str=None):
     prompt = get_prompt(prompt_config=prompts,
                         instruct_lang=instruct_lang,
                         randomize_prompts=randomize_prompts)
     dataset = get_original_dataset(dataset_name)[split]
-    def add_prompt(example):
-        example[start_lang] = prompt.query_prompt(example[start_lang], start_lang)
-        return example        
+
+    if model_formatter is None:
+        # Old behavior - backward compatible, no model-specific formatting
+        def add_prompt(example):
+            example[start_lang] = prompt.query_prompt(example[start_lang], start_lang)
+            return example
+    else:
+        # New behavior - use query prompt for instruction, then wrap with model-specific formatter
+        formatter = get_model_formatter(model_formatter)
+        def add_prompt(example):
+            query = prompt.query_prompt(example[start_lang], start_lang)
+            example[start_lang] = formatter.format_inference_prompt(query)
+            return example
+
     dataset = dataset.map(add_prompt)
     dataset = dataset.rename_columns({start_lang: 'inputs', dest_lang: 'outputs'})
     return dataset
@@ -177,13 +198,14 @@ def get_datasets(datasets: List[str],
                  prompts: str,
                  start_lang: str,
                  dest_lang: str,
-                 instruct_lang: str, 
+                 instruct_lang: str,
                  split: str='validation',
                  randomize_prompts: bool=False,
+                 model_formatter: str=None,
                  **kwargs):
     ans = {}
     for dataset_name in datasets:
-        dataset = get_dataset(dataset_name, prompts, start_lang, dest_lang, instruct_lang, split, randomize_prompts)
+        dataset = get_dataset(dataset_name, prompts, start_lang, dest_lang, instruct_lang, split, randomize_prompts, model_formatter)
         ans[dataset_name] = dataset
     return ans
 
@@ -261,6 +283,38 @@ def evaluate_predictions(predictions: List[str],
     return {m: get_metric(m)(predictions=predictions, references=references) for m in metrics}
 
 
+def test_prompts(**kwargs):
+    """Test and print generated prompts without running inference."""
+    datasets = get_datasets(**kwargs)
+
+    # Get max_examples limit if provided
+    if 'max_examples' in kwargs and kwargs['max_examples'] > 0:
+        max_examples = kwargs['max_examples']
+    else:
+        max_examples = 10  # Default to 10 examples if not specified
+
+    print(f"\n{'='*80}")
+    print(f"Testing prompt generation with model_formatter: {kwargs.get('model_formatter', 'None')}")
+    print(f"{'='*80}\n")
+
+    for dataset_name in datasets:
+        dataset = datasets[dataset_name]
+        num_examples = min(max_examples, len(dataset))
+
+        print(f"\n{'-'*80}")
+        print(f"Dataset: {dataset_name}")
+        print(f"Showing {num_examples} of {len(dataset)} examples")
+        print(f"{'-'*80}\n")
+
+        for i in range(num_examples):
+            print(f"\n--- Example {i+1} ---")
+            print(f"Generated Prompt:")
+            print(dataset['inputs'][i])
+            print(f"\nExpected Output:")
+            print(dataset['outputs'][i])
+            print()
+
+
 def evaluate_experiment_predictions(experiment_output_dir: Path=None) -> Dict[str, List[str]]:
     """Evaluate predictions on all dataset in experiment output directory.
 
@@ -278,6 +332,12 @@ def evaluate_experiment_predictions(experiment_output_dir: Path=None) -> Dict[st
 def main(**kwargs):
     """Run evaluation experiment."""
     kwargs = config_utils.get_experiment_arguments(**kwargs)
+
+    # If test_prompts_only flag is set, just test prompts and exit
+    if kwargs.get('test_prompts_only', False):
+        test_prompts(**kwargs)
+        return
+
     config_utils.save_experiment_output_config(kwargs, experiment=kwargs['experiment'])
     predict(**kwargs) # Make predictions and save them
     evaluate_experiment_predictions() # Evaluate predictions and save scores
