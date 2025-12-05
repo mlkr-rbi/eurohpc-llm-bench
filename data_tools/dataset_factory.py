@@ -1,6 +1,7 @@
 '''
 Metods for creating production (training and/or testing ready) datasets.
 '''
+import os
 from datasets import load_dataset, Dataset, DatasetDict, load_from_disk
 
 from utils import config_utils
@@ -81,12 +82,26 @@ DATASETS = {
 }
 
 def get_original_dataset(dataset_name: str="macocu") -> DatasetDict:
-    '''Load dataset by dataset name.'''
+    '''Load dataset by dataset name or path.
+
+    Args:
+        dataset_name: Either a known dataset label or a path to a HuggingFace dataset folder
+
+    Returns:
+        DatasetDict with train/test/validation splits (or just a Dataset)
+    '''
+    # First check if it's a known label
     if dataset_name.lower() in DATASETS:
         return DATASETS[dataset_name.lower()]()
+    # Then check if it's a valid filesystem path
+    elif os.path.exists(dataset_name):
+        return load_from_disk(dataset_name)
     else:
-        raise NotImplementedError(f"The given dataset ({dataset_name}) is not implemented jet. " +
-                                  f"The only implemented datasets are: ({list(DATASETS.keys())})")
+        raise ValueError(
+            f"Dataset '{dataset_name}' not found. "
+            f"Must be either a known label {list(DATASETS.keys())} "
+            f"or a valid path to a HuggingFace dataset folder."
+        )
 
 
 if __name__ == '__main__':
