@@ -189,7 +189,8 @@ def get_dataset(dataset_name: str,
             example[start_lang] = formatter.format_inference_prompt(query)
             return example
 
-    dataset = dataset.map(add_prompt)
+    # Disable caching to ensure prompt changes are always applied
+    dataset = dataset.map(add_prompt, load_from_cache_file=False)
     dataset = dataset.rename_columns({start_lang: 'inputs', dest_lang: 'outputs'})
     return dataset
 
@@ -285,6 +286,19 @@ def evaluate_predictions(predictions: List[str],
 
 def test_prompts(**kwargs):
     """Test and print generated prompts without running inference."""
+    # Print configuration being used
+    print(f"\n{'='*80}")
+    print(f"PROMPT GENERATION TEST")
+    print(f"{'='*80}")
+    print(f"Configuration:")
+    print(f"  model_formatter: {kwargs.get('model_formatter', 'None (backward compatible mode)')}")
+    print(f"  split: {kwargs.get('split', 'validation')}")
+    print(f"  prompts: {kwargs.get('prompts', 'N/A')}")
+    print(f"  start_lang: {kwargs.get('start_lang', 'N/A')} -> dest_lang: {kwargs.get('dest_lang', 'N/A')}")
+    print(f"  instruct_lang: {kwargs.get('instruct_lang', 'N/A')}")
+    print(f"  randomize_prompts: {kwargs.get('randomize_prompts', False)}")
+    print(f"{'='*80}\n")
+
     datasets = get_datasets(**kwargs)
 
     # Get max_examples limit if provided
@@ -293,17 +307,13 @@ def test_prompts(**kwargs):
     else:
         max_examples = 10  # Default to 10 examples if not specified
 
-    print(f"\n{'='*80}")
-    print(f"Testing prompt generation with model_formatter: {kwargs.get('model_formatter', 'None')}")
-    print(f"{'='*80}\n")
-
     for dataset_name in datasets:
         dataset = datasets[dataset_name]
         num_examples = min(max_examples, len(dataset))
 
         print(f"\n{'-'*80}")
         print(f"Dataset: {dataset_name}")
-        print(f"Showing {num_examples} of {len(dataset)} examples")
+        print(f"Showing {num_examples} of {len(dataset)} examples from '{kwargs.get('split', 'validation')}' split")
         print(f"{'-'*80}\n")
 
         for i in range(num_examples):
