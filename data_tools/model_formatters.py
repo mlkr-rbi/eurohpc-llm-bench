@@ -57,7 +57,7 @@ class MistralInstructFormatter(ModelPromptFormatter):
         return f"<s>[INST] {instruction} [/INST]{response}</s>"
 
     def format_inference_prompt(self, instruction: str) -> str:
-        return f"<s>[INST] {instruction} [/INST]"
+        return f"[INST] {instruction} [/INST]"
 
 
 class Llama2ChatFormatter(ModelPromptFormatter):
